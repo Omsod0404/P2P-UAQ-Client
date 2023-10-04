@@ -1,4 +1,5 @@
-﻿using System;
+﻿using P2P_UAQ_Client.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,13 +16,14 @@ using System.Windows.Shapes;
 namespace P2P_UAQ_Client.Views
 {
     /// <summary>
-    /// Lógica de interacción para Client_chat_private.xaml
+    /// Lógica de interacción para client_inicio.xaml
     /// </summary>
-    public partial class Client_chat_private : Window
+    public partial class LoginView : Window
     {
-        public Client_chat_private()
+        public LoginView()
         {
-            InitializeComponent();
+            DataContext = new LoginViewModel();
+			InitializeComponent();
         }
     }
 }

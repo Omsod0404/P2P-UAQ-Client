@@ -1,11 +1,11 @@
-﻿<Window x:Class="P2P_UAQ_Client.Views.Client_chat_private"
+﻿<Window x:Class="P2P_UAQ_Client.Views.PrivateChatView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:P2P_UAQ_Client.Views"
         mc:Ignorable="d"
-        Title="Client_chat_private" Height="450" Width="800">
+        Title="PrivateChat" Height="450" Width="800">
     <Grid Width="796" Height="424">
         <Border HorizontalAlignment="Left" Height="346" Margin="16,17,0,0" VerticalAlignment="Top" Width="763" Background="#f4f4f4" Grid.RowSpan="2" Grid.ColumnSpan="4">
             <Border.CornerRadius>
@@ -18,7 +18,7 @@
             </Border.CornerRadius>
             <Label Content="Escribe un mensaje"  Grid.IsSharedSizeScope="True" Foreground="#FF9E9E9E" Margin="20,0,-20,0"/>
         </Border>
-        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="671,376,0,0" VerticalAlignment="Top" Width="109" Foreground="White" Background="#FFA55B5F" Click="Button_Click">
+        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="671,376,0,0" VerticalAlignment="Top" Width="109" Foreground="White" Background="#FFA55B5F">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">

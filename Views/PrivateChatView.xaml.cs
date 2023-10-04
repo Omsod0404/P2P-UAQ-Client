@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace P2P_UAQ_Client.Views
 {
     /// <summary>
-    /// Lógica de interacción para client_inicio.xaml
+    /// Lógica de interacción para Client_chat_private.xaml
     /// </summary>
-    public partial class client_inicio : Window
+    public partial class PrivateChatView : Window
     {
-        public client_inicio()
+        public PrivateChatView()
         {
             InitializeComponent();
         }

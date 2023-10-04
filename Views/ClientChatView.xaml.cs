@@ -1,4 +1,5 @@
-﻿using System;
+﻿using P2P_UAQ_Client.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,16 +18,12 @@ namespace P2P_UAQ_Client.View
     /// <summary>
     /// Lógica de interacción para Client_chat.xaml
     /// </summary>
-    public partial class Client_chat : Window
+    public partial class ClientChatView : Window
     {
-        public Client_chat()
+        public ClientChatView()
         {
+            DataContext = new ClientChatViewModel();
             InitializeComponent();
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }
