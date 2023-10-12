@@ -11,6 +11,13 @@
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
+            <ListView d:ItemsSource="{Binding Messages, UpdateSourceTrigger=PropertyChanged}" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF252525">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </Border>
         <Border HorizontalAlignment="Left" Height="30" Margin="13,381,0,0" VerticalAlignment="Top" Width="650" Background="#f4f4f4">
             <Border.CornerRadius>
@@ -34,7 +41,6 @@
                 </Style>
             </Button.Style>
         </Button>
-        <Label Content="Haz iniciado un chat con bioplayer123&#xD;&#xA;bioplayer123: Hola" HorizontalAlignment="Left" Height="69" Margin="34,31,0,0" VerticalAlignment="Top" Width="247"/>
 
     </Grid>
 </Window>

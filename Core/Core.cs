@@ -22,13 +22,13 @@ namespace P2P_UAQ_Client.Core
 		private Connection _newConnection = new Connection(); // Variable reutilizable para los usuarios conectados.
 		private List<Connection> _connections = new List<Connection>(); // Los que estan conectados. 
 		private List<Chat> _chats = new List<Chat>(); // Lista para los chats actualmente activos.
-		private TcpListener _server; // Para ser localmente el servidor y aceptar otros clientes P2p
-		private TcpClient _client; // Para conectarlos al servidor
-
+		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
+		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
+		private TcpClient _currentRemoteClient = new TcpClient();
 
 		// Eventos para actualizar la interfaz.
 
-		public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
+		public event EventHandler<PrivateMessageReceivedEventArgs>? PrivateMessageReceived;
 
 		private CoreHandler()
 		{
@@ -84,8 +84,6 @@ namespace P2P_UAQ_Client.Core
 					{
 						_connections.Add(_newConnection);
 
-
-
 						Thread thread = new Thread(ListenAsLocalServerAsync);
 						thread.Start();
 					}
@@ -109,7 +107,7 @@ namespace P2P_UAQ_Client.Core
 					{
 						var message = model.Data as string;
 						
-						HandlePrivateMessageReceived(message!);
+						
 					}
 
 					// Cuando recibimos un archivo
@@ -143,27 +141,101 @@ namespace P2P_UAQ_Client.Core
 
 			if (_client.Connected)
 			{
-				
+				_serverConnection.Stream = _client.GetStream();
+				_serverConnection.StreamWriter = new StreamWriter(_serverConnection.Stream);
+				_serverConnection.StreamReader = new StreamReader(_serverConnection.Stream);
+
+				// Avisamos al server cual sera nuestro ip, puerto y nombre de usuario
+				// Mandaremos un connection solo con esos datos.
+
+				var connection = new Connection();
+
+				connection.Port = _localConnection.Port;
+				connection.IpAddress = _localConnection.IpAddress;
+				connection.Nickname = _localConnection.Nickname;
+
+				var message = new Message
+				{
+					Type = MessageType.UserConnected,
+					Data = connection,
+					IpAddressRequester = _localConnection.IpAddress,
+					PortRequester = _localConnection.Port,
+					NicknameRequester = _localConnection.Nickname,
+				};
+
+				var json = JsonConvert.SerializeObject(message);
+
+				await _serverConnection.StreamWriter.WriteAsync(json);
 			}
-
-
 		}
 		
-		public async void ListenToServer()
+		public async void ListenToServerAsync()
 		{
+			while (_client.Connected)
+			{
+				try
+				{
+					var dataFromClient = await _serverConnection.StreamReader!.ReadLineAsync();
 
+					var model = JsonConvert.DeserializeObject<Message>(dataFromClient!);
+
+					if (model!.Type == MessageType.UserConnected)
+					{
+						var dataFromModel = model.Data as Connection;
+
+						var existingConnection = _connections.FindAll(n => n.IpAddress == dataFromModel!.IpAddress && n.Port == dataFromModel.Port && n.Nickname == dataFromModel.Nickname);
+
+						if (existingConnection.Count == 0)
+						{
+							_connections.Add(dataFromModel!);
+
+						}
+					}
+					if (model!.Type == MessageType.UserDisconnected)
+					{
+
+					}
+
+				}
+				catch 
+				{
+					
+				}
+			}
 		}
 
-		public async void ConnecToRemoteClient()
+		public async void ConnecToRemoteClientAsync(Connection connection)
 		{
+			var chat = new Chat();
+			chat.RequesterConnection = connection;
 
+			var client = new TcpClient();
+
+			await client.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
+
+			chat.ReceiverConnection!.Stream = client.GetStream();
+			chat.ReceiverConnection!.StreamWriter = new StreamWriter(chat.ReceiverConnection!.Stream);
+			chat.ReceiverConnection!.StreamReader = new StreamReader(chat.ReceiverConnection!.Stream);
+
+			_chats.Add(chat);
+
+			Thread thread = new Thread(ListenToRemoteClientAsync);
+			thread.Start();
 		}
 
-		public async void ListenToRemoteClient()
+		public async void ListenToRemoteClientAsync()
 		{
+			while (_currentRemoteClient.Connected)
+			{
+				try
+				{
+					var dataFromClient = await _serverConnection.StreamReader!.ReadLineAsync();
+				}
+				catch { 
 
+				}
+			}
 		}
-
 
 		public int FreeTcpPort()
 		{

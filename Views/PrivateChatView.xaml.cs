@@ -1,4 +1,6 @@
-﻿using System;
+﻿using P2P_UAQ_Client.Models;
+using P2P_UAQ_Client.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,8 +21,11 @@ namespace P2P_UAQ_Client.Views
     /// </summary>
     public partial class PrivateChatView : Window
     {
-        public PrivateChatView()
+        private PrivateChatViewModel _viewModel;
+        public PrivateChatView(PrivateChatViewModel viewModel)
         {
+            DataContext = viewModel;
+            _viewModel = viewModel;
             InitializeComponent();
         }
     }
