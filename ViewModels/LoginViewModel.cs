@@ -1,4 +1,5 @@
-﻿using System;
+﻿using P2P_UAQ_Client.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -113,6 +114,7 @@ namespace P2P_UAQ_Client.ViewModels
 			_ipLabel = "Dirección IP";
 			_portLabel = "Puerto";
 			_usernameLabel = "Nombre de usuario";
+			CoreHandler.Instance.InitializeLocalServer();
 		}
 
         private void LoginAction(object sender)

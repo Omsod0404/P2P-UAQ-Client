@@ -33,7 +33,7 @@
         </Border>
         <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"  BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF373737" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FFE45D57" VerticalAlignment="Top" HorizontalAlignment="Left" Width="247" Height="30" Margin="14,84,0,0"/>
 
-        <Button Content="Iniciar servidor" HorizontalAlignment="Center" Height="30" Margin="0,119,0,0" Command="{Binding ExecuteLoginCommand}" VerticalAlignment="Top" Width="246" Foreground="White" Background="#FFA55B5F">
+        <Button Content="Conectarse" HorizontalAlignment="Center" Height="30" Margin="0,119,0,0" Command="{Binding ExecuteLoginCommand}" VerticalAlignment="Top" Width="246" Foreground="White" Background="#FFA55B5F">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
