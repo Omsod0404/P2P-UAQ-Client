@@ -121,8 +121,7 @@ namespace P2P_UAQ_Client.ViewModels
         {
 			if (!string.IsNullOrEmpty(Port) && !string.IsNullOrEmpty(IP) && !string.IsNullOrEmpty(Username))
 			{
-				// Aqui van las acciones
-				// De cuando se presione el botono de login
+				CoreHandler.Instance.ConnectoToServerAsync(IP, Port, Username);
 			}
 		}
 

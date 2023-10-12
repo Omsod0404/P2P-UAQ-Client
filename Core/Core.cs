@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using P2P_UAQ_Client.Core.Events;
 using P2P_UAQ_Client.Models;
 
 namespace P2P_UAQ_Client.Core
@@ -16,11 +17,18 @@ namespace P2P_UAQ_Client.Core
 	{
 		private readonly static CoreHandler _instance = new CoreHandler();
 
-		private Connection _localConnection = new Connection();
-		private Connection _newConnection = new Connection();
-		private List<Connection> _connections = new List<Connection>();
-		private TcpListener _server;
-		private TcpClient _client;
+		private Connection _localConnection = new Connection(); // Esta variable contiene nuestra info local.
+		private Connection _serverConnection = new Connection(); // Nuestra conexion al servidor.
+		private Connection _newConnection = new Connection(); // Variable reutilizable para los usuarios conectados.
+		private List<Connection> _connections = new List<Connection>(); // Los que estan conectados. 
+		private List<Chat> _chats = new List<Chat>(); // Lista para los chats actualmente activos.
+		private TcpListener _server; // Para ser localmente el servidor y aceptar otros clientes P2p
+		private TcpClient _client; // Para conectarlos al servidor
+
+
+		// Eventos para actualizar la interfaz.
+
+		public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
 		private CoreHandler()
 		{
@@ -40,6 +48,9 @@ namespace P2P_UAQ_Client.Core
 		{
 			var port = FreeTcpPort();
 			var localEndPoint = new IPEndPoint(IPAddress.Any, port);
+
+			_localConnection.Port = port;
+			_localConnection.IpAddress = localEndPoint.Address.ToString();
 
 			_server = new TcpListener(localEndPoint);
 			_server.Start();
@@ -73,14 +84,16 @@ namespace P2P_UAQ_Client.Core
 					{
 						_connections.Add(_newConnection);
 
-						Thread thread = new Thread(ListenAsLocalServer);
+
+
+						Thread thread = new Thread(ListenAsLocalServerAsync);
 						thread.Start();
 					}
 				}
 			}
 		}
 
-		private async void ListenAsLocalServer()
+		private async void ListenAsLocalServerAsync()
 		{
 			Connection connection = _newConnection;
 
@@ -91,16 +104,25 @@ namespace P2P_UAQ_Client.Core
 					var dataReceived = await connection.StreamReader!.ReadLineAsync();
 					var model = JsonConvert.DeserializeObject<Message>(dataReceived!);
 
-					// Cuando recibimos un nuevo usuario
+					// Cuando recibimos un nuevo mensaje
 					if (model!.Type == MessageType.ChatMessage)
 					{
-						var nick = model.Data;
+						var message = model.Data as string;
+						
+						HandlePrivateMessageReceived(message!);
 					}
-					else
+
+					// Cuando recibimos un archivo
+					if (model!.Type == MessageType.File)
 					{
 
 					}
 
+					// Cuando se cierra el chat del otro lado.
+					if (model!.Type == MessageType.ChatCloseRequest)
+					{
+
+					}
 				}
 				catch
 				{
@@ -110,8 +132,20 @@ namespace P2P_UAQ_Client.Core
 			while (true);
 		}
 
-		public async void ConnectoToServer()
+		public async void ConnectoToServerAsync(string ip, string port, string username)
 		{
+			_serverConnection.IpAddress = ip;
+			_serverConnection.Port = int.Parse(port);
+
+			_localConnection.Nickname = username;
+
+			await _client.ConnectAsync(IPAddress.Parse(_serverConnection.IpAddress), _serverConnection.Port);
+
+			if (_client.Connected)
+			{
+				
+			}
+
 
 		}
 		
@@ -140,5 +174,13 @@ namespace P2P_UAQ_Client.Core
 		
 			return port;
 		}
+
+		// Invokes 
+		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
+
+		// Handlers
+		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
+
+
 	}
 }

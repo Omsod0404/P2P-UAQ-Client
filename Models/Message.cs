@@ -9,6 +9,9 @@ namespace P2P_UAQ_Client.Models
 	public class Message
 	{
 		public MessageType Type { get; set; }
+		public string? IpAddressRequester { get; set; }
+		public string? NicknameRequester { get; set; }
 		public object? Data { get; set; }
+		public int PortRequester { get; set; }
 	}
 }
