@@ -26,6 +26,7 @@ namespace P2P_UAQ_Client.Views
         {
             DataContext = viewModel;
             _viewModel = viewModel;
+            _viewModel.SetWindowReference(this);
             InitializeComponent();
         }
     }

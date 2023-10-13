@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:P2P_UAQ_Client.Views"
         mc:Ignorable="d"
-        Title="PrivateChat" Height="450" Width="800">
+        Title="{Binding WindowTitle, UpdateSourceTrigger=PropertyChanged}" Height="450" Width="800">
     <Grid Width="796" Height="424">
         <Border HorizontalAlignment="Left" Height="346" Margin="16,17,0,0" VerticalAlignment="Top" Width="763" Background="#f4f4f4" Grid.RowSpan="2" Grid.ColumnSpan="4">
             <Border.CornerRadius>
@@ -19,13 +19,14 @@
                 </ListView.View>
             </ListView>
         </Border>
-        <Border HorizontalAlignment="Left" Height="30" Margin="13,381,0,0" VerticalAlignment="Top" Width="650" Background="#f4f4f4">
+        <Border HorizontalAlignment="Center" Height="30" Margin="0,376,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4">
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
-            <Label Content="Escribe un mensaje"  Grid.IsSharedSizeScope="True" Foreground="#FF9E9E9E" Margin="20,0,-20,0"/>
+            <Label Content="{Binding MessageLabel, UpdateSourceTrigger=PropertyChanged}"  Grid.IsSharedSizeScope="True" Foreground="#FF9E9E9E"/>
         </Border>
-        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="671,376,0,0" VerticalAlignment="Top" Width="109" Foreground="White" Background="#FFA55B5F">
+        <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="16,368,133,10" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040"/>
+        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="671,376,0,0" VerticalAlignment="Top" Width="109" Foreground="White" Background="#FFA55B5F" Command="{Binding SendMessageCommand}">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
