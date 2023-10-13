@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace P2P_UAQ_Client.ViewModels
 {
@@ -21,8 +22,14 @@ namespace P2P_UAQ_Client.ViewModels
 
 		private string _username = "";
 		private string _message = "";
-		private Window _window;
+		private string _messageLabel;
 		private string _windowTitle = "";
+
+		private Window? _window = null;
+
+		private ICommand SendMessageCommand;
+
+		public Connection? Connection { get; set; }
 
 		public ObservableCollection<string> Messages
 		{
@@ -39,8 +46,18 @@ namespace P2P_UAQ_Client.ViewModels
 			get { return _windowTitle; }
 			set
 			{
-				_windowTitle = $"Chat privado{Username}";
+				_windowTitle = $"Chat privado con {Username}";
 				OnPropertyChanged(nameof(WindowTitle));
+			}
+		}
+
+		public string MessageLabel
+		{
+			get { return _messageLabel; }
+			set
+			{
+				_messageLabel = value;
+				OnPropertyChanged(nameof(MessageLabel));
 			}
 		}
 
@@ -65,8 +82,9 @@ namespace P2P_UAQ_Client.ViewModels
 
 		public PrivateChatViewModel()
         {
-
-        }
+			SendMessageCommand = new ViewModelCommand(SendMessage);
+			_messageLabel = "Escribe un mensaje";
+		}
 
 		public void AddMessage(string message)
 		{
@@ -80,7 +98,7 @@ namespace P2P_UAQ_Client.ViewModels
 		{
 			Application.Current.Dispatcher.Invoke(() =>
 			{
-				_window.Close();
+				_window!.Close();
 			});
 		}
 
@@ -93,7 +111,12 @@ namespace P2P_UAQ_Client.ViewModels
 		{
 			if (!string.IsNullOrEmpty(Message))
 			{
-				//_coreClient.SendMessageToRoom(Message, _messageRoom);
+				Application.Current.Dispatcher.Invoke(new Action(() =>
+				{
+					Messages.Add(Message);
+				}));
+
+				_coreHandler.SendMessageToRemoteClient(Connection!, Message);
 				Message = "";
 			}
 		}

@@ -11,6 +11,6 @@ namespace P2P_UAQ_Client.Models
 	{
 		public Connection? RequesterConnection { get; set; }
 		public Connection? ReceiverConnection { get; set; }
-		public ClientChatViewModel? ClientChatViewModel { get; set; }
+		public PrivateChatViewModel? PrivateChatViewModel { get; set; }
 	}
 }
