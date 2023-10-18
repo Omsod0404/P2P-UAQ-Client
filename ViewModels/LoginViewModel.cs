@@ -19,6 +19,7 @@ namespace P2P_UAQ_Client.ViewModels
         private string _usernameLabel;
 		private string _ipLabel;
 		private string _portLabel;
+		private bool _isConnectiing;
 
 		public ICommand ExecuteLoginCommand
         {
@@ -119,10 +120,25 @@ namespace P2P_UAQ_Client.ViewModels
 
         private void LoginAction(object sender)
         {
-			if (!string.IsNullOrEmpty(Port) && !string.IsNullOrEmpty(IP) && !string.IsNullOrEmpty(Username))
+			while (!CoreHandler.Instance.IsConnected)
 			{
-				CoreHandler.Instance.ConnectoToServerAsync(IP, Port, Username);
+				if (!string.IsNullOrEmpty(Port) && !string.IsNullOrEmpty(IP) && !string.IsNullOrEmpty(Username))
+				{
+					if (!_isConnectiing)
+					{
+						CoreHandler.Instance.ConnectoToServerAsync(IP, Port, Username);
+						_isConnectiing = true;
+					}
+
+				}
+
+				if (!CoreHandler.Instance.UsernameAvailable)
+				{
+
+					break;
+				}
 			}
+			
 		}
 
 		private string FormatIPv4(string input)

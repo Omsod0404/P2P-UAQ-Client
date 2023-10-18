@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using P2P_UAQ_Client.Core.Events;
 using P2P_UAQ_Client.Models;
+using P2P_UAQ_Client.ViewModels;
+using P2P_UAQ_Client.Views;
 
 namespace P2P_UAQ_Client.Core
 {
@@ -25,6 +27,9 @@ namespace P2P_UAQ_Client.Core
 		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
+		public bool IsConnected { get; private set; }
+
+		public bool UsernameAvailable { get; private set; }
 
 		// Eventos para actualizar la interfaz.
 
@@ -82,6 +87,17 @@ namespace P2P_UAQ_Client.Core
 
 					if (existingConnection.Count == 0)
 					{
+						var viewModel = new PrivateChatViewModel();
+						viewModel.Connection = _newConnection;
+						viewModel.Username = nick!;
+
+						var window = new PrivateChatView(viewModel);
+						window.Show();
+						
+
+
+
+
 						_connections.Add(_newConnection);
 
 						Thread thread = new Thread(ListenAsLocalServerAsync);
@@ -106,7 +122,27 @@ namespace P2P_UAQ_Client.Core
 					if (model!.Type == MessageType.ChatMessage)
 					{
 						var message = model.Data as string;
-						
+						var ip = model.IpAddressRequester;
+						var port = model.PortRequester;
+						var nickname = model.NicknameRequester;
+
+						var requesterList = _chats.FindAll(n => n.RequesterConnection!.IpAddress == ip && n.RequesterConnection.Port == port && n.RequesterConnection.Nickname == nickname);
+						var receiverlist = _chats.FindAll(n => n.ReceiverConnection!.IpAddress == ip && n.ReceiverConnection.Port == port && n.ReceiverConnection.Nickname == nickname);
+
+						if (requesterList.Count > 0)
+						{
+							var chat = requesterList[0];
+
+							chat.PrivateChatViewModel!.AddMessage(message!);
+
+						}
+
+						if (receiverlist.Count > 0)
+						{
+							var chat = receiverlist[0];
+
+							chat.PrivateChatViewModel!.AddMessage(message!);
+						}
 						
 					}
 
@@ -166,6 +202,7 @@ namespace P2P_UAQ_Client.Core
 				var json = JsonConvert.SerializeObject(message);
 
 				await _serverConnection.StreamWriter.WriteAsync(json);
+				await _serverConnection.StreamWriter.FlushAsync();
 			}
 		}
 		
@@ -187,6 +224,7 @@ namespace P2P_UAQ_Client.Core
 
 						if (existingConnection.Count == 0)
 						{
+
 							_connections.Add(dataFromModel!);
 
 						}
@@ -204,10 +242,11 @@ namespace P2P_UAQ_Client.Core
 			}
 		}
 
-		public async void ConnecToRemoteClientAsync(Connection connection)
+		public async void ConnectToRemoteClientAsync(Connection connection)
 		{
 			var chat = new Chat();
 			chat.RequesterConnection = connection;
+			_newConnection = connection;
 
 			var client = new TcpClient();
 
@@ -225,11 +264,42 @@ namespace P2P_UAQ_Client.Core
 
 		public async void ListenToRemoteClientAsync()
 		{
+			var connection = _newConnection;
+
 			while (_currentRemoteClient.Connected)
 			{
 				try
 				{
-					var dataFromClient = await _serverConnection.StreamReader!.ReadLineAsync();
+					var dataReceived = await connection.StreamReader!.ReadLineAsync();
+					var model = JsonConvert.DeserializeObject<Message>(dataReceived!);
+
+					// Cuando recibimos un nuevo mensaje
+					if (model!.Type == MessageType.ChatMessage)
+					{
+						var message = model.Data as string;
+						var ip = model.IpAddressRequester;
+						var port = model.PortRequester;
+						var nickname = model.NicknameRequester;
+
+						var requesterList = _chats.FindAll(n => n.RequesterConnection!.IpAddress == ip && n.RequesterConnection.Port == port && n.RequesterConnection.Nickname == nickname);
+						var receiverlist = _chats.FindAll(n => n.ReceiverConnection!.IpAddress == ip && n.ReceiverConnection.Port == port && n.ReceiverConnection.Nickname == nickname);
+
+						if (requesterList.Count > 0)
+						{
+							var chat = requesterList[0];
+
+							chat.PrivateChatViewModel!.AddMessage(message!);
+
+						}
+
+						if (receiverlist.Count > 0)
+						{
+							var chat = receiverlist[0];
+
+							chat.PrivateChatViewModel!.AddMessage(message!);
+						}
+
+					}
 				}
 				catch { 
 
@@ -246,6 +316,10 @@ namespace P2P_UAQ_Client.Core
 		
 			return port;
 		}
+
+		// Metodo para mandar un mensaje
+		public async void SendMessageToRemoteClient(Connection connection, string message) => await connection.StreamWriter!.WriteLineAsync(message!);
+		
 
 		// Invokes 
 		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);

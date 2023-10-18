@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:P2P_UAQ_Client.Views"
         mc:Ignorable="d"
         Title="Iniciar" Height="178" Width="278" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
-    <Grid Width="278" Margin="0,0,0,1">
+    <Grid Width="278" Height="161" VerticalAlignment="Top">
 
         <Border HorizontalAlignment="Left" Height="30" Margin="17,12,0,0" VerticalAlignment="Top" Width="247" Background="#f4f4f4">
             <Border.CornerRadius>
