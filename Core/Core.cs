@@ -28,7 +28,7 @@ namespace P2P_UAQ_Client.Core
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
 		public bool IsConnected { get; private set; }
-
+		public bool UsernameWasChecked { get; private set; }
 		public bool UsernameAvailable { get; private set; }
 
 		// Eventos para actualizar la interfaz.
@@ -37,7 +37,9 @@ namespace P2P_UAQ_Client.Core
 
 		private CoreHandler()
 		{
-
+			IsConnected = false;
+			UsernameWasChecked = false;
+			UsernameAvailable = false;
 		}
 
 		public static CoreHandler Instance
@@ -193,7 +195,7 @@ namespace P2P_UAQ_Client.Core
 				var message = new Message
 				{
 					Type = MessageType.UserConnected,
-					Data = connection,
+					Data = JsonConvert.SerializeObject(connection),
 					IpAddressRequester = _localConnection.IpAddress,
 					PortRequester = _localConnection.Port,
 					NicknameRequester = _localConnection.Nickname,
@@ -201,8 +203,11 @@ namespace P2P_UAQ_Client.Core
 
 				var json = JsonConvert.SerializeObject(message);
 
-				await _serverConnection.StreamWriter.WriteAsync(json);
-				await _serverConnection.StreamWriter.FlushAsync();
+				_serverConnection.StreamWriter.WriteLine(json);
+				_serverConnection.StreamWriter.Flush();
+
+				Thread thread = new Thread(ListenToServerAsync);
+				thread.Start();
 			}
 		}
 		
@@ -232,6 +237,12 @@ namespace P2P_UAQ_Client.Core
 					if (model!.Type == MessageType.UserDisconnected)
 					{
 
+					}
+
+					if (model!.Type == MessageType.UsernameInUse)
+					{
+						UsernameAvailable = (bool) model.Data!;
+						UsernameWasChecked = true;
 					}
 
 				}
