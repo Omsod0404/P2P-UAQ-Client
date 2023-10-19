@@ -1,16 +1,22 @@
 ﻿using P2P_UAQ_Client.Core;
+using P2P_UAQ_Client.Core.Events;
+using P2P_UAQ_Client.View;
+using P2P_UAQ_Client.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace P2P_UAQ_Client.ViewModels
 {
     public class LoginViewModel : BaseViewModel
     {
+		private CoreHandler _coreHandler;
+
         private ICommand _executeLoginCommand;
 
         private string _username;
@@ -20,6 +26,9 @@ namespace P2P_UAQ_Client.ViewModels
 		private string _ipLabel;
 		private string _portLabel;
 		private bool _isConnectiing;
+		private bool _isConnected;
+		private bool _isUsernameAvailable;
+		private bool _isUsernameWasChecked;
 
 		public ICommand ExecuteLoginCommand
         {
@@ -106,39 +115,83 @@ namespace P2P_UAQ_Client.ViewModels
 			}
 		}
 
+		public bool IsConnected
+		{
+			get { return _isConnected; }
+			set
+			{
+				_isConnected = value;
+				OnPropertyChanged(nameof(IsConnected));
+			}
+		}
+		public bool IsUsernameAvailable
+		{
+			get { return _isUsernameAvailable; }
+			set
+			{
+				_isUsernameAvailable = value;
+				OnPropertyChanged(nameof(IsUsernameAvailable));
+			}
+		}
+		public bool IsUsernameWasChecked
+		{
+			get { return _isUsernameWasChecked; }
+			set
+			{
+				_isUsernameWasChecked = value;
+				OnPropertyChanged(nameof(IsUsernameWasChecked));
+			}
+		}
+
 		public LoginViewModel()
         {
-            _executeLoginCommand = new ViewModelCommand(LoginAction);
+			CoreHandler.Instance.InitializeLocalServer();
+			_coreHandler = CoreHandler.Instance;
+			_executeLoginCommand = new ViewModelCommand(LoginAction);
             _username = "";
             _ip = "";
 			_port = "";
 			_ipLabel = "Dirección IP";
 			_portLabel = "Puerto";
 			_usernameLabel = "Nombre de usuario";
-			CoreHandler.Instance.InitializeLocalServer();
+			_coreHandler.ConnectedStatusEvent += _coreHandler_ConnectedStatusEvent;
+			_coreHandler.UsernameAvailableEvent += _coreHandler_UsernameAvailableEvent;
+			_coreHandler.UsernameCheckedEvent += _coreHandler_UsernameCheckedEvent;
 		}
 
-        private void LoginAction(object sender)
-        {
-			while (!CoreHandler.Instance.IsConnected)
+		private void _coreHandler_UsernameCheckedEvent(object? sender, UsernameCheckedEventArgs e)
+		{
+			IsUsernameWasChecked = e.UsernameWasChecked;
+		}
+
+		private void _coreHandler_UsernameAvailableEvent(object? sender, UsernameIsAvailableEventArgs e)
+		{
+			IsUsernameAvailable = e.UsernameIsAvailable;
+
+			if (IsUsernameAvailable && IsUsernameWasChecked)
 			{
-				if (!string.IsNullOrEmpty(Port) && !string.IsNullOrEmpty(IP) && !string.IsNullOrEmpty(Username))
+				var view = new ClientChatView();
+				Application.Current.Dispatcher.Invoke(new Action(() =>
 				{
-					if (!_isConnectiing)
-					{
-						CoreHandler.Instance.ConnectoToServerAsync(IP, Port, Username);
-						_isConnectiing = true;
-					}
-
-				}
-
-				if (!CoreHandler.Instance.UsernameAvailable)
-				{
-
-					break;
-				}
+					Application.Current.MainWindow.Close();
+					Application.Current.MainWindow = view;
+					view.Show();
+				}));
+				
 			}
-			
+		}
+
+		private void _coreHandler_ConnectedStatusEvent(object? sender, ConnectedStatusEventArgs e)
+		{
+			IsConnected = e.Connected;
+		}
+
+		private void LoginAction(object sender)
+        {
+			if (!string.IsNullOrEmpty(Port) && !string.IsNullOrEmpty(IP) && !string.IsNullOrEmpty(Username))
+			{
+				CoreHandler.Instance.ConnectoToServerAsync(IP, Port, Username);
+			}
 		}
 
 		private string FormatIPv4(string input)

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,9 @@ namespace P2P_UAQ_Client.Core
 		// Eventos para actualizar la interfaz.
 
 		public event EventHandler<PrivateMessageReceivedEventArgs>? PrivateMessageReceived;
+		public event EventHandler<ConnectedStatusEventArgs>? ConnectedStatusEvent;
+		public event EventHandler<UsernameCheckedEventArgs>? UsernameCheckedEvent;
+		public event EventHandler<UsernameIsAvailableEventArgs>? UsernameAvailableEvent;
 
 		private CoreHandler()
 		{
@@ -243,6 +247,8 @@ namespace P2P_UAQ_Client.Core
 					{
 						UsernameAvailable = (bool) model.Data!;
 						UsernameWasChecked = true;
+						HandleUsernameChecked(UsernameWasChecked);
+						HandleUsernameAvailable(UsernameAvailable);
 					}
 
 				}
@@ -334,10 +340,15 @@ namespace P2P_UAQ_Client.Core
 
 		// Invokes 
 		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
+		private void OnUsernameCheckedStatusChanged(UsernameCheckedEventArgs e) => UsernameCheckedEvent?.Invoke(this, e);
+		private void OnUsernameIsAvailableStatusChanged(UsernameIsAvailableEventArgs e) => UsernameAvailableEvent?.Invoke(this, e);
+		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
 
 		// Handlers
 		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
-
+		private void HandleUsernameChecked(bool value) => OnUsernameCheckedStatusChanged(new UsernameCheckedEventArgs(value));
+		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
+		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
 
 	}
 }

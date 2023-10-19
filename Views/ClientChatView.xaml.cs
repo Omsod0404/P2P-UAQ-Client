@@ -22,8 +22,8 @@ namespace P2P_UAQ_Client.View
     {
         public ClientChatView()
         {
-            DataContext = new ClientChatViewModel();
             InitializeComponent();
-        }
+			DataContext = new ClientChatViewModel();
+		}
     }
 }
