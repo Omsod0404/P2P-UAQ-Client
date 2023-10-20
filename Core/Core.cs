@@ -19,12 +19,12 @@ namespace P2P_UAQ_Client.Core
 {
 	public class CoreHandler
 	{
-		private readonly static CoreHandler _instance = new CoreHandler();
+		private readonly static CoreHandler _instance = new();
 
-		private Connection _localConnection = new Connection(); // Esta variable contiene nuestra info local.
-		private Connection _serverConnection = new Connection(); // Nuestra conexion al servidor.
-		private Connection _newConnection = new Connection(); // Variable reutilizable para los usuarios conectados.
-		private List<Connection> _connections = new List<Connection>(); // Los que estan conectados. 
+		private Connection _localConnection = new(); // Esta variable contiene nuestra info local.
+		private Connection _serverConnection = new(); // Nuestra conexion al servidor.
+		private Connection _newConnection = new(); // Variable reutilizable para los usuarios conectados.
+		private List<Connection> _connections = new(); // Los que estan conectados. 
 		private List<Chat> _chats = new List<Chat>(); // Lista para los chats actualmente activos.
 		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
@@ -37,6 +37,7 @@ namespace P2P_UAQ_Client.Core
 
 		public event EventHandler<PrivateMessageReceivedEventArgs>? PrivateMessageReceived;
 		public event EventHandler<ConnectedStatusEventArgs>? ConnectedStatusEvent;
+		public event EventHandler<MessageReceivedEventArgs>? MessageReceivedEvent;
 		public event EventHandler<UsernameCheckedEventArgs>? UsernameCheckedEvent;
 		public event EventHandler<UsernameIsAvailableEventArgs>? UsernameAvailableEvent;
 
@@ -100,10 +101,6 @@ namespace P2P_UAQ_Client.Core
 
 						var window = new PrivateChatView(viewModel);
 						window.Show();
-						
-
-
-
 
 						_connections.Add(_newConnection);
 
@@ -216,13 +213,13 @@ namespace P2P_UAQ_Client.Core
 			}
 		}
 		
-		public async void ListenToServerAsync()
+		public void ListenToServerAsync()
 		{
 			while (_client.Connected)
 			{
 				try
 				{
-					var dataFromClient = await _serverConnection.StreamReader!.ReadLineAsync();
+					var dataFromClient = _serverConnection.StreamReader!.ReadLine();
 
 					var model = JsonConvert.DeserializeObject<Message>(dataFromClient!);
 
@@ -248,7 +245,9 @@ namespace P2P_UAQ_Client.Core
 					{
 						UsernameAvailable = (bool) model.Data!;
 						UsernameWasChecked = true;
+						
 						HandleUsernameChecked(UsernameWasChecked);
+
 						Application.Current.Dispatcher.Invoke(new Action(() =>
 						{
 							HandleUsernameAvailable(UsernameAvailable);
@@ -318,7 +317,6 @@ namespace P2P_UAQ_Client.Core
 
 							chat.PrivateChatViewModel!.AddMessage(message!);
 						}
-
 					}
 				}
 				catch { 
@@ -340,18 +338,18 @@ namespace P2P_UAQ_Client.Core
 		// Metodo para mandar un mensaje
 		public async void SendMessageToRemoteClient(Connection connection, string message) => await connection.StreamWriter!.WriteLineAsync(message!);
 		
-
 		// Invokes 
 		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
 		private void OnUsernameCheckedStatusChanged(UsernameCheckedEventArgs e) => UsernameCheckedEvent?.Invoke(this, e);
 		private void OnUsernameIsAvailableStatusChanged(UsernameIsAvailableEventArgs e) => UsernameAvailableEvent?.Invoke(this, e);
 		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
+		private void OnMessageReceived(MessageReceivedEventArgs e) => MessageReceivedEvent?.Invoke(this, e);
 
 		// Handlers
 		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
 		private void HandleUsernameChecked(bool value) => OnUsernameCheckedStatusChanged(new UsernameCheckedEventArgs(value));
 		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
 		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
-
+		private void HandleMessageReceived(string value) => OnMessageReceived(new MessageReceivedEventArgs(value));
 	}
 }

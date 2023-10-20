@@ -40,7 +40,7 @@
             </Button.Style>
         </Button>
 
-        <TextBlock TextWrapping="Wrap" Margin="25,32,158,60"><Run Text="rodriitepatzi se ha unido."/><LineBreak/><Run Text="bioplayer123: hola"/><Run Language="es-mx" Text="."/></TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="25,32,158,60"><Run Text="{}"/><LineBreak/><Run Text="bioplayer123: hola"/><Run Language="es-mx" Text="."/></TextBlock>
         <StackPanel Margin="789,44,10,45"/>
     </Grid>
 </Window>

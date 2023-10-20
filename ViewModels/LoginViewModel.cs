@@ -168,7 +168,7 @@ namespace P2P_UAQ_Client.ViewModels
 		{
 			IsUsernameAvailable = e.UsernameIsAvailable;
 
-			if (IsUsernameAvailable && IsUsernameWasChecked)
+			if (!IsUsernameAvailable && IsUsernameWasChecked)
 			{
 				var view = new ClientChatView();
 				Application.Current.Dispatcher.Invoke(new Action(() =>
