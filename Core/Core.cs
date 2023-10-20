@@ -8,6 +8,7 @@ using System.Security.RightsManagement;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using Newtonsoft.Json;
 using P2P_UAQ_Client.Core.Events;
 using P2P_UAQ_Client.Models;
@@ -248,9 +249,11 @@ namespace P2P_UAQ_Client.Core
 						UsernameAvailable = (bool) model.Data!;
 						UsernameWasChecked = true;
 						HandleUsernameChecked(UsernameWasChecked);
-						HandleUsernameAvailable(UsernameAvailable);
+						Application.Current.Dispatcher.Invoke(new Action(() =>
+						{
+							HandleUsernameAvailable(UsernameAvailable);
+						}));						
 					}
-
 				}
 				catch 
 				{
