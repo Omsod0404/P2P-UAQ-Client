@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:P2P_UAQ_Client.View"
         mc:Ignorable="d"
         Title="Chat" Height="424
-        " Width="909">
+        " Width="909" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
     <Grid>
         <Border HorizontalAlignment="Left" Height="346" Margin="16,17,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4" Grid.RowSpan="2" Grid.ColumnSpan="5">
             <Border.CornerRadius>
@@ -40,7 +40,7 @@
             </Button.Style>
         </Button>
 
-        <TextBlock TextWrapping="Wrap" Margin="25,32,158,60"><Run Text="{}"/><LineBreak/><Run Text="bioplayer123: hola"/><Run Language="es-mx" Text="."/></TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="16,23,133,45" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto"></TextBlock>
         <StackPanel Margin="789,44,10,45"/>
     </Grid>
 </Window>

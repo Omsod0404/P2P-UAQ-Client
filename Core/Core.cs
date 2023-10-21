@@ -19,13 +19,13 @@ namespace P2P_UAQ_Client.Core
 {
 	public class CoreHandler
 	{
-		private readonly static CoreHandler _instance = new();
+		private readonly static CoreHandler _instance = new(); // Singleton
 
+		private List<Connection> _connections = new(); // Los que estan conectados. 
+		private List<Chat> _chats = new List<Chat>(); // Lista para los chats actualmente activos.
 		private Connection _localConnection = new(); // Esta variable contiene nuestra info local.
 		private Connection _serverConnection = new(); // Nuestra conexion al servidor.
 		private Connection _newConnection = new(); // Variable reutilizable para los usuarios conectados.
-		private List<Connection> _connections = new(); // Los que estan conectados. 
-		private List<Chat> _chats = new List<Chat>(); // Lista para los chats actualmente activos.
 		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
@@ -33,6 +33,7 @@ namespace P2P_UAQ_Client.Core
 		public bool UsernameWasChecked { get; private set; }
 		public bool UsernameAvailable { get; private set; }
 
+		
 		// Eventos para actualizar la interfaz.
 
 		public event EventHandler<PrivateMessageReceivedEventArgs>? PrivateMessageReceived;
@@ -138,7 +139,6 @@ namespace P2P_UAQ_Client.Core
 							var chat = requesterList[0];
 
 							chat.PrivateChatViewModel!.AddMessage(message!);
-
 						}
 
 						if (receiverlist.Count > 0)
@@ -225,17 +225,26 @@ namespace P2P_UAQ_Client.Core
 
 					if (model!.Type == MessageType.UserConnected)
 					{
-						var dataFromModel = model.Data as Connection;
+						string? json = model!.Data! as string;
 
-						var existingConnection = _connections.FindAll(n => n.IpAddress == dataFromModel!.IpAddress && n.Port == dataFromModel.Port && n.Nickname == dataFromModel.Nickname);
+						var dataFromModel = JsonConvert.DeserializeObject<Connection>(json!);
+                        var existingConnection = _connections.FindAll(n => n.IpAddress == dataFromModel!.IpAddress && n.Port == dataFromModel.Port && n.Nickname == dataFromModel.Nickname);
 
 						if (existingConnection.Count == 0)
 						{
-
 							_connections.Add(dataFromModel!);
+						}
+                    }
 
+					if (model!.Type == MessageType.Message)
+					{
+						if(model!.Data is string)
+						{
+							var message = model!.Data! as string;
+							HandleMessageReceived(message!);
 						}
 					}
+
 					if (model!.Type == MessageType.UserDisconnected)
 					{
 
@@ -306,23 +315,30 @@ namespace P2P_UAQ_Client.Core
 						if (requesterList.Count > 0)
 						{
 							var chat = requesterList[0];
-
 							chat.PrivateChatViewModel!.AddMessage(message!);
-
 						}
 
 						if (receiverlist.Count > 0)
 						{
 							var chat = receiverlist[0];
-
 							chat.PrivateChatViewModel!.AddMessage(message!);
 						}
 					}
 				}
-				catch { 
+				catch 
+				{ 
 
 				}
 			}
+		}
+
+		public void Dispose()
+		{
+			_client.Close();
+			_client.Dispose();
+			_server!.Stop();
+			_currentRemoteClient.Close();
+			_currentRemoteClient.Dispose();
 		}
 
 		public int FreeTcpPort()

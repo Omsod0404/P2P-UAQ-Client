@@ -14,7 +14,7 @@ namespace P2P_UAQ_Client.ViewModels
     {
         private CoreHandler _coreHandler;
         private ObservableCollection<StackPanel> _connectionsUI = new ObservableCollection<StackPanel>();
-        private ObservableCollection<string> _messages = new ObservableCollection<string>();
+        private List<string> _messages = new List<string>();
         private string _messageLabel;
         private string _message;
         
@@ -47,7 +47,7 @@ namespace P2P_UAQ_Client.ViewModels
             }
         }
 
-        public ObservableCollection<string> Messages
+        public List<string> Messages
         {
             get { return this._messages; }
             set
@@ -63,17 +63,19 @@ namespace P2P_UAQ_Client.ViewModels
             _messageLabel = "Escribe un mensaje";
             ExecuteSendMessage = new ViewModelCommand(SendMessageCommand);
 			_coreHandler.MessageReceivedEvent += _coreHandler_MessageReceivedEvent;
+            OnPropertyChanged(nameof(AllMessages));
         }
 
 		private void _coreHandler_MessageReceivedEvent(object? sender, Core.Events.MessageReceivedEventArgs e)
 		{
 			Messages.Add(e.Message);
-            OnPropertyChanged(nameof(AllServerStatusMessages));
+            OnPropertyChanged(nameof(AllMessages));
 		}
 
-		public string AllServerStatusMessages
+		public string AllMessages
 		{
 			get { return string.Join(Environment.NewLine, Messages); }
+            set { }
 		}
 
 		public void SendMessageCommand(object sender)

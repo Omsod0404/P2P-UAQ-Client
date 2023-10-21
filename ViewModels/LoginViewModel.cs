@@ -25,7 +25,6 @@ namespace P2P_UAQ_Client.ViewModels
         private string _usernameLabel;
 		private string _ipLabel;
 		private string _portLabel;
-		private bool _isConnectiing;
 		private bool _isConnected;
 		private bool _isUsernameAvailable;
 		private bool _isUsernameWasChecked;
