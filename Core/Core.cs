@@ -29,10 +29,13 @@ namespace P2P_UAQ_Client.Core
 		private Connection _remoteConnection = new();
 		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
+		private TcpClient _localClient = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
 		public bool IsConnected { get; private set; }
 		public bool UsernameWasChecked { get; private set; }
 		public bool UsernameAvailable { get; private set; }
+
+		private bool _clientClosing = false;
 
 		
 		// Eventos para actualizar la interfaz.
@@ -73,14 +76,14 @@ namespace P2P_UAQ_Client.Core
 
 			while (true)
 			{
-				_client = await _server.AcceptTcpClientAsync();
+				_localClient = await _server.AcceptTcpClientAsync();
 
 				_newConnection = new Connection();
-				_newConnection.Stream = _client.GetStream();
+				_newConnection.Stream = _localClient.GetStream();
 				_newConnection.StreamWriter = new StreamWriter(_newConnection.Stream);
 				_newConnection.StreamReader = new StreamReader(_newConnection.Stream);
 
-				var ipFromNewConnection = ((IPEndPoint)_client.Client.RemoteEndPoint!);
+				var ipFromNewConnection = ((IPEndPoint)_localClient.Client.RemoteEndPoint!);
 
 				_newConnection.IpAddress = ipFromNewConnection.Address.ToString();
 				_newConnection.Port = ipFromNewConnection.Port;
@@ -110,6 +113,7 @@ namespace P2P_UAQ_Client.Core
 						Thread thread = new Thread(ListenAsLocalServerAsync);
 						thread.Start();
 					}
+
 				}
 			}
 		}
@@ -169,7 +173,7 @@ namespace P2P_UAQ_Client.Core
 
 				}
 			}
-			while (true);
+			while (!_clientClosing);
 		}
 
 		public async void ConnectoToServerAsync(string ip, string port, string username)
@@ -354,11 +358,11 @@ namespace P2P_UAQ_Client.Core
 
 		public void Dispose()
 		{
+			_clientClosing = true;
+			//_server!.Stop();
 			_client.Close();
-			_client.Dispose();
-			_server!.Stop();
+			_localClient.Close();
 			_currentRemoteClient.Close();
-			_currentRemoteClient.Dispose();
 		}
 
 		public int FreeTcpPort()
