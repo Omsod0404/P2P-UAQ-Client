@@ -26,6 +26,7 @@ namespace P2P_UAQ_Client.Core
 		private Connection _localConnection = new(); // Esta variable contiene nuestra info local.
 		private Connection _serverConnection = new(); // Nuestra conexion al servidor.
 		private Connection _newConnection = new(); // Variable reutilizable para los usuarios conectados.
+		private Connection _remoteConnection = new();
 		private TcpListener? _server; // Para ser localmente el servidor y aceptar otros clientes P2p
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
@@ -41,6 +42,7 @@ namespace P2P_UAQ_Client.Core
 		public event EventHandler<MessageReceivedEventArgs>? MessageReceivedEvent;
 		public event EventHandler<UsernameCheckedEventArgs>? UsernameCheckedEvent;
 		public event EventHandler<UsernameIsAvailableEventArgs>? UsernameAvailableEvent;
+		public event EventHandler<ConnectionAddedEventArgs>? ConnectionAddedEvent;
 
 		private CoreHandler()
 		{
@@ -232,6 +234,11 @@ namespace P2P_UAQ_Client.Core
 
 						if (existingConnection.Count == 0)
 						{
+							Application.Current.Dispatcher.Invoke(() =>
+							{
+								HandleConnectionAdded(dataFromModel!);
+							});
+							
 							_connections.Add(dataFromModel!);
 						}
                     }
@@ -254,7 +261,9 @@ namespace P2P_UAQ_Client.Core
 					{
 						UsernameAvailable = (bool) model.Data!;
 						UsernameWasChecked = true;
-						
+
+						//if (!UsernameAvailable) Dispose();
+
 						HandleUsernameChecked(UsernameWasChecked);
 
 						Application.Current.Dispatcher.Invoke(new Action(() =>
@@ -272,33 +281,44 @@ namespace P2P_UAQ_Client.Core
 
 		public async void ConnectToRemoteClientAsync(Connection connection)
 		{
-			var chat = new Chat();
-			chat.RequesterConnection = connection;
-			_newConnection = connection;
+			if (connection.Port == _localConnection.Port && connection.Nickname == _localConnection.Nickname)
+			{
+				MessageBox.Show("No te puedes conectar a ti mismo.");
 
-			var client = new TcpClient();
+				return;
+			}
+			else
+			{
+				var chat = new Chat();
+				chat.RequesterConnection = _localConnection;
 
-			await client.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
+				chat.ReceiverConnection = connection;
+				_remoteConnection = chat.ReceiverConnection;
 
-			chat.ReceiverConnection!.Stream = client.GetStream();
-			chat.ReceiverConnection!.StreamWriter = new StreamWriter(chat.ReceiverConnection!.Stream);
-			chat.ReceiverConnection!.StreamReader = new StreamReader(chat.ReceiverConnection!.Stream);
+				await _currentRemoteClient.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
 
-			_chats.Add(chat);
+				var stream = _currentRemoteClient.GetStream();
+				var streamWriter = new StreamWriter(stream);
+				var streamReader = new StreamReader(stream);
 
-			Thread thread = new Thread(ListenToRemoteClientAsync);
-			thread.Start();
+				chat.ReceiverConnection.Stream = stream;
+				chat.ReceiverConnection.StreamWriter = streamWriter;
+				chat.ReceiverConnection.StreamReader = streamReader;
+
+				Thread thread = new Thread(ListenToRemoteClientAsync);
+				thread.Start();
+			}
 		}
 
-		public async void ListenToRemoteClientAsync()
+		public void ListenToRemoteClientAsync()
 		{
-			var connection = _newConnection;
+			var connection = _remoteConnection;
 
 			while (_currentRemoteClient.Connected)
 			{
 				try
 				{
-					var dataReceived = await connection.StreamReader!.ReadLineAsync();
+					var dataReceived = connection.StreamReader!.ReadLine();
 					var model = JsonConvert.DeserializeObject<Message>(dataReceived!);
 
 					// Cuando recibimos un nuevo mensaje
@@ -360,12 +380,14 @@ namespace P2P_UAQ_Client.Core
 		private void OnUsernameIsAvailableStatusChanged(UsernameIsAvailableEventArgs e) => UsernameAvailableEvent?.Invoke(this, e);
 		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
 		private void OnMessageReceived(MessageReceivedEventArgs e) => MessageReceivedEvent?.Invoke(this, e);
+		private void OnConnectionAdded(ConnectionAddedEventArgs e) => ConnectionAddedEvent?.Invoke(this, e);
 
 		// Handlers
 		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
+		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
 		private void HandleUsernameChecked(bool value) => OnUsernameCheckedStatusChanged(new UsernameCheckedEventArgs(value));
 		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
-		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
 		private void HandleMessageReceived(string value) => OnMessageReceived(new MessageReceivedEventArgs(value));
+		private void HandleConnectionAdded(Connection value) => OnConnectionAdded(new ConnectionAddedEventArgs(value));
 	}
 }
