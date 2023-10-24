@@ -16,28 +16,38 @@ namespace P2P_UAQ_Client.ViewModels
 {
 	public class PrivateChatViewModel : BaseViewModel
 	{
-		private ObservableCollection<string> _messages = new ObservableCollection<string>();
+		private List<string> _messages = new List<string>();
 
-        private CoreHandler _coreHandler = CoreHandler.Instance;
+		private CoreHandler _coreHandler = CoreHandler.Instance;
 
 		private string _username = "";
 		private string _message = "";
 		private string _messageLabel;
-		private string _windowTitle = "";
+		private string _windowTitle = "Chat privado con";
 
 		private Window? _window = null;
 
-		private ICommand SendMessageCommand;
+		public ICommand SendMessageCommand { get; set; }
 
 		public Connection? Connection { get; set; }
 
-		public ObservableCollection<string> Messages
+		public List<string> Messages
 		{
 			get { return _messages; }
 			set
 			{
 				_messages = value;
 				OnPropertyChanged(nameof(Messages));
+				OnPropertyChanged(nameof(AllMessages));
+			}
+		}
+
+		public string AllMessages
+		{
+			get { return string.Join(Environment.NewLine, Messages); }
+			set
+			{
+
 			}
 		}
 
@@ -80,9 +90,11 @@ namespace P2P_UAQ_Client.ViewModels
 			}
 		}
 
-		public PrivateChatViewModel()
+		public PrivateChatViewModel(string username)
         {
 			SendMessageCommand = new ViewModelCommand(SendMessage);
+			Username = username;
+			WindowTitle = $"Chat privado con {Username}";
 			_messageLabel = "Escribe un mensaje";
 		}
 

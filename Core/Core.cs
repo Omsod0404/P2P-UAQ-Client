@@ -37,7 +37,6 @@ namespace P2P_UAQ_Client.Core
 
 		private bool _clientClosing = false;
 
-		
 		// Eventos para actualizar la interfaz.
 
 		public event EventHandler<PrivateMessageReceivedEventArgs>? PrivateMessageReceived;
@@ -46,6 +45,7 @@ namespace P2P_UAQ_Client.Core
 		public event EventHandler<UsernameCheckedEventArgs>? UsernameCheckedEvent;
 		public event EventHandler<UsernameIsAvailableEventArgs>? UsernameAvailableEvent;
 		public event EventHandler<ConnectionAddedEventArgs>? ConnectionAddedEvent;
+		public event EventHandler<ConnectionRemovedEventArgs>? ConnectionRemovedEvent;
 
 		private CoreHandler()
 		{
@@ -97,23 +97,26 @@ namespace P2P_UAQ_Client.Core
 
 					_newConnection.Nickname = nick;
 
-					var existingConnection = _connections.FindAll(n => n.Nickname == _newConnection.Nickname && n.IpAddress == n.IpAddress && n.Port == _newConnection.Port);
+					var existingChat = _chats.FindAll(n => n.RequesterConnection!.Nickname == _newConnection.Nickname || n.ReceiverConnection!.Nickname == _newConnection.Nickname);
 
-					if (existingConnection.Count == 0)
+					if (existingChat.Count == 0)
 					{
-						var viewModel = new PrivateChatViewModel();
+						var chat = new Chat();
+						chat.ReceiverConnection = _localConnection;
+						chat.RequesterConnection = _newConnection;
+
+						var viewModel = new PrivateChatViewModel(nick!);
 						viewModel.Connection = _newConnection;
-						viewModel.Username = nick!;
 
 						var window = new PrivateChatView(viewModel);
 						window.Show();
 
-						_connections.Add(_newConnection);
+
+						_chats.Add(chat);
 
 						Thread thread = new Thread(ListenAsLocalServerAsync);
 						thread.Start();
 					}
-
 				}
 			}
 		}
@@ -129,7 +132,6 @@ namespace P2P_UAQ_Client.Core
 					var dataReceived = await connection.StreamReader!.ReadLineAsync();
 					var model = JsonConvert.DeserializeObject<Message>(dataReceived!);
 
-					// Cuando recibimos un nuevo mensaje
 					if (model!.Type == MessageType.ChatMessage)
 					{
 						var message = model.Data as string;
@@ -258,7 +260,20 @@ namespace P2P_UAQ_Client.Core
 
 					if (model!.Type == MessageType.UserDisconnected)
 					{
+						string? json = model!.Data! as string;
 
+						var dataFromModel = JsonConvert.DeserializeObject<Connection>(json!);
+						var existingConnection = _connections.FindAll(n => n.IpAddress == dataFromModel!.IpAddress && n.Port == dataFromModel.Port && n.Nickname == dataFromModel.Nickname);
+
+						if (existingConnection.Count > 0)
+						{
+							Application.Current.Dispatcher.Invoke(() =>
+							{
+								HandleConnectionRemoved(existingConnection[0]);
+							});
+
+							_connections.Remove(existingConnection[0]);
+						}
 					}
 
 					if (model!.Type == MessageType.UsernameInUse)
@@ -266,7 +281,7 @@ namespace P2P_UAQ_Client.Core
 						UsernameAvailable = (bool) model.Data!;
 						UsernameWasChecked = true;
 
-						//if (!UsernameAvailable) Dispose();
+						//if (!UsernameAv ailable) Dispose();
 
 						HandleUsernameChecked(UsernameWasChecked);
 
@@ -293,24 +308,50 @@ namespace P2P_UAQ_Client.Core
 			}
 			else
 			{
-				var chat = new Chat();
-				chat.RequesterConnection = _localConnection;
+				var existingChat = _chats.FindAll(n => n.RequesterConnection!.Nickname == _newConnection.Nickname || n.ReceiverConnection!.Nickname == _newConnection.Nickname);
 
-				chat.ReceiverConnection = connection;
-				_remoteConnection = chat.ReceiverConnection;
+				if (existingChat.Count == 0)
+				{
 
-				await _currentRemoteClient.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
+					var chat = new Chat();
+					chat.RequesterConnection = _localConnection;
 
-				var stream = _currentRemoteClient.GetStream();
-				var streamWriter = new StreamWriter(stream);
-				var streamReader = new StreamReader(stream);
+					chat.ReceiverConnection = connection;
+					_remoteConnection = chat.ReceiverConnection;
 
-				chat.ReceiverConnection.Stream = stream;
-				chat.ReceiverConnection.StreamWriter = streamWriter;
-				chat.ReceiverConnection.StreamReader = streamReader;
+					await _currentRemoteClient.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
 
-				Thread thread = new Thread(ListenToRemoteClientAsync);
-				thread.Start();
+					var stream = _currentRemoteClient.GetStream();
+					var streamWriter = new StreamWriter(stream);
+					var streamReader = new StreamReader(stream);
+
+					chat.ReceiverConnection.Stream = stream;
+					chat.ReceiverConnection.StreamWriter = streamWriter;
+					chat.ReceiverConnection.StreamReader = streamReader;
+
+					var message = new Message();
+
+					message.Type = MessageType.ChatRequest;
+					message.Data = _localConnection.Nickname;
+
+					streamWriter.WriteLine(JsonConvert.SerializeObject(message));
+					streamWriter.Flush();
+
+					string? nick = connection.Nickname as string;
+
+					var viewModel = new PrivateChatViewModel(nick!);
+					viewModel.Connection = _newConnection;
+
+					var window = new PrivateChatView(viewModel);
+					window.Show();
+
+					_chats.Add(chat);
+
+					Thread thread = new Thread(ListenToRemoteClientAsync);
+					thread.Start();
+				}
+
+				
 			}
 		}
 
@@ -376,7 +417,19 @@ namespace P2P_UAQ_Client.Core
 		}
 
 		// Metodo para mandar un mensaje
-		public async void SendMessageToRemoteClient(Connection connection, string message) => await connection.StreamWriter!.WriteLineAsync(message!);
+		// Checar por errores.
+		//
+		//
+		//
+		public async void SendMessageToRemoteClient(Connection connection, string message)
+		{
+			var messageVar = new Message();
+			messageVar.Type = MessageType.ChatMessage;
+			messageVar.Data = message!;
+
+			await connection.StreamWriter!.WriteLineAsync(JsonConvert.SerializeObject(messageVar));
+			connection.StreamWriter!.Flush();
+		}
 		
 		// Invokes 
 		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
@@ -385,6 +438,7 @@ namespace P2P_UAQ_Client.Core
 		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
 		private void OnMessageReceived(MessageReceivedEventArgs e) => MessageReceivedEvent?.Invoke(this, e);
 		private void OnConnectionAdded(ConnectionAddedEventArgs e) => ConnectionAddedEvent?.Invoke(this, e);
+		private void OnConnectionRemoved(ConnectionRemovedEventArgs e) => ConnectionRemovedEvent?.Invoke(this, e);
 
 		// Handlers
 		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
@@ -393,5 +447,6 @@ namespace P2P_UAQ_Client.Core
 		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
 		private void HandleMessageReceived(string value) => OnMessageReceived(new MessageReceivedEventArgs(value));
 		private void HandleConnectionAdded(Connection value) => OnConnectionAdded(new ConnectionAddedEventArgs(value));
+		private void HandleConnectionRemoved(Connection value) => OnConnectionRemoved(new ConnectionRemovedEventArgs(value));
 	}
 }

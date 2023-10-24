@@ -82,8 +82,17 @@ namespace P2P_UAQ_Client.ViewModels
 			RequestPrivateRoomCommand = new ViewModelCommand(RequestPrivateRoom);
 			_coreHandler.MessageReceivedEvent += _coreHandler_MessageReceivedEvent;
 			_coreHandler.ConnectionAddedEvent += _coreHandler_ConnectionAddedEvent;
+			_coreHandler.ConnectionRemovedEvent += _coreHandler_ConnectionRemovedEvent;
             OnPropertyChanged(nameof(AllMessages));
         }
+
+		private void _coreHandler_ConnectionRemovedEvent(object? sender, ConnectionRemovedEventArgs e)
+		{
+			Application.Current.Dispatcher.Invoke(() =>
+			{
+				ConnectionsUI.Remove(n => n.IpAddress == e.Connection.IpAddress && n.Port == e.Connection.Port && n.Nickname == e.Connection.Nickname);
+			});
+		}
 
 		private void _coreHandler_ConnectionAddedEvent(object? sender, ConnectionAddedEventArgs e)
 		{

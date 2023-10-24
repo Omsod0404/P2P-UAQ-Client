@@ -11,37 +11,16 @@
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
-            <ListView d:ItemsSource="{Binding Messages, UpdateSourceTrigger=PropertyChanged}" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF252525">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
         </Border>
-        <Border HorizontalAlignment="Center" Height="30" Margin="0,376,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4">
+        <TextBlock TextWrapping="Wrap" Margin="16,23,133,45" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto"></TextBlock>
+        <Border HorizontalAlignment="Left" Height="30" Margin="16,376,0,0" VerticalAlignment="Top" Width="664" Background="#f4f4f4">
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
-            <Label Content="{Binding MessageLabel, UpdateSourceTrigger=PropertyChanged}"  Grid.IsSharedSizeScope="True" Foreground="#FF9E9E9E"/>
         </Border>
-        <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="16,368,133,10" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040"/>
-        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="671,376,0,0" VerticalAlignment="Top" Width="109" Foreground="White" Background="#FFA55B5F" Command="{Binding SendMessageCommand}">
-            <Button.Style>
-                <Style TargetType="Button">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="10">
-                                    <!-- Ajusta el valor de CornerRadius para hacer las esquinas circulares -->
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </Button.Style>
-        </Button>
+        <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="0,376,116,18" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040" HorizontalAlignment="Right" Width="663"/>
+        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Margin="692,376,0,0" VerticalAlignment="Top" Width="94" Foreground="White" Background="#FFA55B5F" Command="{Binding SendMessageCommand}"/>
+
 
     </Grid>
 </Window>
