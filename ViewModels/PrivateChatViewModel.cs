@@ -28,6 +28,7 @@ namespace P2P_UAQ_Client.ViewModels
 		public bool RequestedClosed { get; set; }
 
 		public ICommand SendMessageCommand { get; set; }
+		public ICommand FileCommand { get; set; }
 
 		public Connection? Connection { get; set; }
 
@@ -92,6 +93,7 @@ namespace P2P_UAQ_Client.ViewModels
 		public PrivateChatViewModel(Connection connection)
         {
 			SendMessageCommand = new ViewModelCommand(SendMessage);
+			FileCommand = new ViewModelCommand(SendFile);
 			Connection = connection;
 			WindowTitle = $"Chat privado con {Connection.Nickname}";
 			_messageLabel = "Escribe un mensaje";
@@ -133,6 +135,11 @@ namespace P2P_UAQ_Client.ViewModels
 				_coreHandler.SendMessageToRemoteClient(Connection!, $"{CoreHandler.Instance.LocalConnection!.Nickname}: {Message}");
 				Message = "";
 			}
+		}
+
+		private void SendFile(object sender)
+		{
+			// Para mandar el arhcivo
 		}
 
 		public void RequestCloseRoom()

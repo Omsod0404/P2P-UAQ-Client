@@ -85,8 +85,17 @@ namespace P2P_UAQ_Client.Core
 
 		public async void InitializeLocalServer()
 		{
-			var port = FreeTcpPort();
-			var localEndPoint = new IPEndPoint(IPAddress.Any, port);
+			List<string> ips = new List<string>();
+
+			var entry = Dns.GetHostEntry(Dns.GetHostName());
+
+			foreach (IPAddress ip in entry.AddressList)
+				if (ip.AddressFamily == AddressFamily.InterNetwork)
+					ips.Add(ip.ToString());
+
+			
+			var port = FreeTcpPort(ips[0]);
+			var localEndPoint = new IPEndPoint(IPAddress.Parse(ips[0]), port);
 
 			_localConnection.Port = port;
 			_localConnection.IpAddress = localEndPoint.Address.ToString();
@@ -176,7 +185,18 @@ namespace P2P_UAQ_Client.Core
 					// Cuando se cierra el chat del otro lado.
 					if (model!.Type == MessageType.ChatCloseRequest)
 					{
+						var nickname = model.NicknameRequester;
+						var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
 
+						if (chatList.Count > 0)
+						{
+							var chat = chatList[0];
+							chat.PrivateChatViewModel!.RequestedClosed = true;
+							chat.PrivateChatViewModel!.CloseWindow();
+							_chats.Remove(chat);
+							_chats.RemoveAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+							_currentRemoteClient.Close();
+						}
 					}
 				}
 				catch
@@ -454,11 +474,11 @@ namespace P2P_UAQ_Client.Core
 				var chat = chatList[0];
 				_chats.Remove(chat);
 				_chats.RemoveAll(n => string.Equals(n.RequesterConnection!.Nickname, _localConnection.Nickname) || string.Equals(n.ReceiverConnection!.Nickname, _localConnection.Nickname));
-				_currentRemoteClient.Close();
+				//_currentRemoteClient.Close();
 			}
 		}
 
-		public int FreeTcpPort()
+		public int FreeTcpPort(string ip)
 		{
 			var listener = new TcpListener(IPAddress.Loopback, 0);
 			listener.Start();
@@ -466,6 +486,11 @@ namespace P2P_UAQ_Client.Core
 			listener.Stop();
 		
 			return port;
+		}
+
+		public void SendFileToChat()
+		{
+			// Para mandar el archivo
 		}
 
 		public void Dispose()

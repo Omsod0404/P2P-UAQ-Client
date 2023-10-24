@@ -30,14 +30,16 @@ namespace P2P_UAQ_Client.Views
 			DataContext = viewModel;
 		}
 
-		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		private void Button_Click(object sender, RoutedEventArgs e)
 		{
-            if (!_viewModel.RequestedClosed) _viewModel.RequestCloseRoom();
+            _viewModel.RequestCloseRoom();
+            this.Close();
 		}
 
-		private void Window_Closed(object sender, EventArgs e)
+		private void Rectangle_MouseDown(object sender, MouseButtonEventArgs e)
 		{
-			if (!_viewModel.RequestedClosed) _viewModel.RequestCloseRoom();
+			if (e.ChangedButton == MouseButton.Left)
+				this.DragMove();
 		}
 	}
 }
