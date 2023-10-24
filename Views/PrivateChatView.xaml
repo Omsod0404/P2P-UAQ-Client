@@ -25,7 +25,7 @@
         <Button Content="Enviar" Height="30" Margin="0,376,14,0" VerticalAlignment="Top" Foreground="White" Background="#FFA55B5F" Command="{Binding SendMessageCommand}" Grid.Column="1" HorizontalAlignment="Right" Width="94"/>
         <Label Content="{Binding WindowTitle, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Height="29" Foreground="White"/>
         <Button Content="x" HorizontalAlignment="Left" Margin="765,0,0,0" VerticalAlignment="Top" Click="Button_Click" BorderThickness="0,0,0,0" Foreground="White" Background="#FFA55B5F" Width="26" Height="29" Padding="0,0,0,0"/>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="648,380,0,0" VerticalAlignment="Top" Height="22" BorderBrush="{x:Null}" Foreground="{x:Null}" Padding="0,0,0,0" Width="22">
+        <Button Command="{Binding FileCommand}" Content="Button" HorizontalAlignment="Left" Margin="648,380,0,0" VerticalAlignment="Top" Height="22" BorderBrush="{x:Null}" Foreground="{x:Null}" Padding="0,0,0,0" Width="22">
             <Button.Background>
                 <ImageBrush ImageSource="/Resources/Upload.png"/>
             </Button.Background>
