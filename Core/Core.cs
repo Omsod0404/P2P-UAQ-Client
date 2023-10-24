@@ -179,8 +179,16 @@ namespace P2P_UAQ_Client.Core
 					// Cuando recibimos un archivo
 					if (model!.Type == MessageType.File)
 					{
+                        var nickname = model.NicknameRequester;
 
-					}
+                        var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+
+                        if (chatList.Count > 0)
+                        {
+                            var chat = chatList[0];
+                            chat.PrivateChatViewModel!.AddMessage("Nueva imagen perro");
+                        }
+                    }
 
 					// Cuando se cierra el chat del otro lado.
 					if (model!.Type == MessageType.ChatCloseRequest)
@@ -430,8 +438,16 @@ namespace P2P_UAQ_Client.Core
 					// Cuando recibimos un archivo
 					if (model!.Type == MessageType.File)
 					{
+                        var nickname = model.NicknameRequester;
 
-					}
+                        var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+
+                        if (chatList.Count > 0)
+                        {
+                            var chat = chatList[0];
+                            chat.PrivateChatViewModel!.AddMessage("Nueva imagen perro");
+                        }
+                    }
 
 					
 				}
@@ -488,12 +504,20 @@ namespace P2P_UAQ_Client.Core
 			return port;
 		}
 
-		public void SendFileToChat()
-		{
-			// Para mandar el archivo
-		}
+        public void SendFileToChat(Connection connection, byte[] img)
+        {
+            // Para mandar el archivo
+            var messageVar = new Message();
 
-		public void Dispose()
+            messageVar.Type = MessageType.File;
+            messageVar.Data = img;
+            messageVar.NicknameRequester = _localConnection.Nickname;
+
+            connection.StreamWriter!.WriteLine(JsonConvert.SerializeObject(messageVar));
+            connection.StreamWriter!.Flush();
+        }
+
+        public void Dispose()
 		{
 			_clientClosing = true;
 			//_server!.Stop();
