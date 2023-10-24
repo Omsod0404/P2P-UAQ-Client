@@ -29,5 +29,15 @@ namespace P2P_UAQ_Client.Views
             InitializeComponent();
 			DataContext = viewModel;
 		}
-    }
+
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+            if (!_viewModel.RequestedClosed) _viewModel.RequestCloseRoom();
+		}
+
+		private void Window_Closed(object sender, EventArgs e)
+		{
+			if (!_viewModel.RequestedClosed) _viewModel.RequestCloseRoom();
+		}
+	}
 }

@@ -31,6 +31,8 @@ namespace P2P_UAQ_Client.Core
 		private TcpClient _client = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _localClient = new TcpClient(); // Para conectarlos al servidor
 		private TcpClient _currentRemoteClient = new TcpClient();
+
+		public Connection LocalConnection { get { return _localConnection; } }
 		public bool IsConnected { get; private set; }
 		public bool UsernameWasChecked { get; private set; }
 		public bool UsernameAvailable { get; private set; }
@@ -46,6 +48,24 @@ namespace P2P_UAQ_Client.Core
 		public event EventHandler<UsernameIsAvailableEventArgs>? UsernameAvailableEvent;
 		public event EventHandler<ConnectionAddedEventArgs>? ConnectionAddedEvent;
 		public event EventHandler<ConnectionRemovedEventArgs>? ConnectionRemovedEvent;
+
+		// Invokes 
+		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
+		private void OnUsernameCheckedStatusChanged(UsernameCheckedEventArgs e) => UsernameCheckedEvent?.Invoke(this, e);
+		private void OnUsernameIsAvailableStatusChanged(UsernameIsAvailableEventArgs e) => UsernameAvailableEvent?.Invoke(this, e);
+		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
+		private void OnMessageReceived(MessageReceivedEventArgs e) => MessageReceivedEvent?.Invoke(this, e);
+		private void OnConnectionAdded(ConnectionAddedEventArgs e) => ConnectionAddedEvent?.Invoke(this, e);
+		private void OnConnectionRemoved(ConnectionRemovedEventArgs e) => ConnectionRemovedEvent?.Invoke(this, e);
+
+		// Handlers
+		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
+		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
+		private void HandleUsernameChecked(bool value) => OnUsernameCheckedStatusChanged(new UsernameCheckedEventArgs(value));
+		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
+		private void HandleMessageReceived(string value) => OnMessageReceived(new MessageReceivedEventArgs(value));
+		private void HandleConnectionAdded(Connection value) => OnConnectionAdded(new ConnectionAddedEventArgs(value));
+		private void HandleConnectionRemoved(Connection value) => OnConnectionRemoved(new ConnectionRemovedEventArgs(value));
 
 		private CoreHandler()
 		{
@@ -105,8 +125,8 @@ namespace P2P_UAQ_Client.Core
 						chat.ReceiverConnection = _localConnection;
 						chat.RequesterConnection = _newConnection;
 
-						var viewModel = new PrivateChatViewModel(nick!);
-						viewModel.Connection = _newConnection;
+						var viewModel = new PrivateChatViewModel(_newConnection);
+						chat.PrivateChatViewModel = viewModel;
 
 						var window = new PrivateChatView(viewModel);
 						window.Show();
@@ -132,30 +152,19 @@ namespace P2P_UAQ_Client.Core
 					var dataReceived = await connection.StreamReader!.ReadLineAsync();
 					var model = JsonConvert.DeserializeObject<Message>(dataReceived!);
 
+					// Cuando recibimos un nuevo mensaje
 					if (model!.Type == MessageType.ChatMessage)
 					{
 						var message = model.Data as string;
-						var ip = model.IpAddressRequester;
-						var port = model.PortRequester;
 						var nickname = model.NicknameRequester;
 
-						var requesterList = _chats.FindAll(n => n.RequesterConnection!.IpAddress == ip && n.RequesterConnection.Port == port && n.RequesterConnection.Nickname == nickname);
-						var receiverlist = _chats.FindAll(n => n.ReceiverConnection!.IpAddress == ip && n.ReceiverConnection.Port == port && n.ReceiverConnection.Nickname == nickname);
+						var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
 
-						if (requesterList.Count > 0)
+						if (chatList.Count > 0)
 						{
-							var chat = requesterList[0];
-
+							var chat = chatList[0];
 							chat.PrivateChatViewModel!.AddMessage(message!);
 						}
-
-						if (receiverlist.Count > 0)
-						{
-							var chat = receiverlist[0];
-
-							chat.PrivateChatViewModel!.AddMessage(message!);
-						}
-						
 					}
 
 					// Cuando recibimos un archivo
@@ -319,6 +328,8 @@ namespace P2P_UAQ_Client.Core
 					chat.ReceiverConnection = connection;
 					_remoteConnection = chat.ReceiverConnection;
 
+					_currentRemoteClient = new();
+
 					await _currentRemoteClient.ConnectAsync(IPAddress.Parse(connection.IpAddress!), connection.Port);
 
 					var stream = _currentRemoteClient.GetStream();
@@ -332,15 +343,15 @@ namespace P2P_UAQ_Client.Core
 					var message = new Message();
 
 					message.Type = MessageType.ChatRequest;
+					message.NicknameRequester =	_localConnection.Nickname;
 					message.Data = _localConnection.Nickname;
 
 					streamWriter.WriteLine(JsonConvert.SerializeObject(message));
 					streamWriter.Flush();
 
-					string? nick = connection.Nickname as string;
 
-					var viewModel = new PrivateChatViewModel(nick!);
-					viewModel.Connection = _newConnection;
+					var viewModel = new PrivateChatViewModel(_remoteConnection);
+					chat.PrivateChatViewModel = viewModel;
 
 					var window = new PrivateChatView(viewModel);
 					window.Show();
@@ -350,8 +361,6 @@ namespace P2P_UAQ_Client.Core
 					Thread thread = new Thread(ListenToRemoteClientAsync);
 					thread.Start();
 				}
-
-				
 			}
 		}
 
@@ -370,25 +379,41 @@ namespace P2P_UAQ_Client.Core
 					if (model!.Type == MessageType.ChatMessage)
 					{
 						var message = model.Data as string;
-						var ip = model.IpAddressRequester;
-						var port = model.PortRequester;
 						var nickname = model.NicknameRequester;
 
-						var requesterList = _chats.FindAll(n => n.RequesterConnection!.IpAddress == ip && n.RequesterConnection.Port == port && n.RequesterConnection.Nickname == nickname);
-						var receiverlist = _chats.FindAll(n => n.ReceiverConnection!.IpAddress == ip && n.ReceiverConnection.Port == port && n.ReceiverConnection.Nickname == nickname);
+						var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
 
-						if (requesterList.Count > 0)
+						if (chatList.Count > 0)
 						{
-							var chat = requesterList[0];
-							chat.PrivateChatViewModel!.AddMessage(message!);
-						}
-
-						if (receiverlist.Count > 0)
-						{
-							var chat = receiverlist[0];
+							var chat = chatList[0];
 							chat.PrivateChatViewModel!.AddMessage(message!);
 						}
 					}
+
+					// Cuando se cierra el chat del otro lado.
+					if (model!.Type == MessageType.ChatCloseRequest)
+					{
+						var nickname = model.NicknameRequester;
+						var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+
+						if (chatList.Count > 0)
+						{
+							var chat = chatList[0];
+							chat.PrivateChatViewModel!.RequestedClosed = true;
+							chat.PrivateChatViewModel!.CloseWindow();
+							_chats.Remove(chat);
+							_chats.RemoveAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+							_currentRemoteClient.Close();
+						}
+					}
+
+					// Cuando recibimos un archivo
+					if (model!.Type == MessageType.File)
+					{
+
+					}
+
+					
 				}
 				catch 
 				{ 
@@ -397,13 +422,40 @@ namespace P2P_UAQ_Client.Core
 			}
 		}
 
-		public void Dispose()
+		public void SendMessageToRemoteClient(Connection connection, string message)
 		{
-			_clientClosing = true;
-			//_server!.Stop();
-			_client.Close();
-			_localClient.Close();
-			_currentRemoteClient.Close();
+			var messageVar = new Message();
+
+			messageVar.Type = MessageType.ChatMessage;
+			messageVar.Data = message!;
+			messageVar.NicknameRequester = _localConnection.Nickname;
+
+			connection.StreamWriter!.WriteLine(JsonConvert.SerializeObject(messageVar));
+			connection.StreamWriter!.Flush();
+		}
+
+		// Hay un bug cuando de repente cierra el chat. Hay bugs.
+		// Checar
+
+		public void RequestToCloseChat(Connection connection)
+		{
+			var messageVar = new Message();
+			messageVar.Type = MessageType.ChatCloseRequest;
+			messageVar.NicknameRequester = _localConnection.Nickname;
+			messageVar.Data = true;
+
+			connection.StreamWriter!.WriteLine(JsonConvert.SerializeObject(messageVar));
+			connection.StreamWriter!.Flush();
+
+			var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, _localConnection.Nickname) || string.Equals(n.ReceiverConnection!.Nickname, _localConnection.Nickname));
+
+			if (chatList.Count > 0)
+			{
+				var chat = chatList[0];
+				_chats.Remove(chat);
+				_chats.RemoveAll(n => string.Equals(n.RequesterConnection!.Nickname, _localConnection.Nickname) || string.Equals(n.ReceiverConnection!.Nickname, _localConnection.Nickname));
+				_currentRemoteClient.Close();
+			}
 		}
 
 		public int FreeTcpPort()
@@ -416,37 +468,13 @@ namespace P2P_UAQ_Client.Core
 			return port;
 		}
 
-		// Metodo para mandar un mensaje
-		// Checar por errores.
-		//
-		//
-		//
-		public async void SendMessageToRemoteClient(Connection connection, string message)
+		public void Dispose()
 		{
-			var messageVar = new Message();
-			messageVar.Type = MessageType.ChatMessage;
-			messageVar.Data = message!;
-
-			await connection.StreamWriter!.WriteLineAsync(JsonConvert.SerializeObject(messageVar));
-			connection.StreamWriter!.Flush();
+			_clientClosing = true;
+			//_server!.Stop();
+			_client.Close();
+			_localClient.Close();
+			_currentRemoteClient.Close();
 		}
-		
-		// Invokes 
-		private void OnPrivateMessageReceived(PrivateMessageReceivedEventArgs e) => PrivateMessageReceived?.Invoke(this, e);
-		private void OnUsernameCheckedStatusChanged(UsernameCheckedEventArgs e) => UsernameCheckedEvent?.Invoke(this, e);
-		private void OnUsernameIsAvailableStatusChanged(UsernameIsAvailableEventArgs e) => UsernameAvailableEvent?.Invoke(this, e);
-		private void OnStatusConnectedChanged(ConnectedStatusEventArgs e) => ConnectedStatusEvent?.Invoke(this, e);
-		private void OnMessageReceived(MessageReceivedEventArgs e) => MessageReceivedEvent?.Invoke(this, e);
-		private void OnConnectionAdded(ConnectionAddedEventArgs e) => ConnectionAddedEvent?.Invoke(this, e);
-		private void OnConnectionRemoved(ConnectionRemovedEventArgs e) => ConnectionRemovedEvent?.Invoke(this, e);
-
-		// Handlers
-		private void HandlePrivateMessageReceived(string message) => OnPrivateMessageReceived(new PrivateMessageReceivedEventArgs(message));
-		private void HandleConnectionStatus(bool value) => OnStatusConnectedChanged(new ConnectedStatusEventArgs(value));
-		private void HandleUsernameChecked(bool value) => OnUsernameCheckedStatusChanged(new UsernameCheckedEventArgs(value));
-		private void HandleUsernameAvailable(bool value) => OnUsernameIsAvailableStatusChanged(new UsernameIsAvailableEventArgs(value));
-		private void HandleMessageReceived(string value) => OnMessageReceived(new MessageReceivedEventArgs(value));
-		private void HandleConnectionAdded(Connection value) => OnConnectionAdded(new ConnectionAddedEventArgs(value));
-		private void HandleConnectionRemoved(Connection value) => OnConnectionRemoved(new ConnectionRemovedEventArgs(value));
 	}
 }
