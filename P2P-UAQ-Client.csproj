@@ -9,6 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Upload.png" />
+    <None Remove="Views\Message.png" />
+    <None Remove="Views\Upload.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Upload.png" />
+    <Resource Include="Views\Message.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Views\Upload.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 

@@ -1,4 +1,5 @@
-﻿using P2P_UAQ_Client.ViewModels;
+﻿using P2P_UAQ_Client.Core;
+using P2P_UAQ_Client.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,5 +26,15 @@ namespace P2P_UAQ_Client.View
             InitializeComponent();
 			DataContext = new ClientChatViewModel();
 		}
-    }
+
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+            CoreHandler.Instance.Dispose();
+		}
+
+		private void Window_Closed(object sender, EventArgs e)
+		{
+			CoreHandler.Instance.Dispose();
+		}
+	}
 }

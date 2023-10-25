@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:P2P_UAQ_Client.View"
         mc:Ignorable="d"
         Title="Chat" Height="424
-        " Width="909" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+        " Width="909" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Closing="Window_Closing" Closed="Window_Closed">
     <Grid>
         <Border HorizontalAlignment="Left" Height="346" Margin="16,17,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4" Grid.RowSpan="2" Grid.ColumnSpan="5">
             <Border.CornerRadius>
@@ -41,6 +41,28 @@
         </Button>
 
         <TextBlock TextWrapping="Wrap" Margin="16,23,133,45" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto"></TextBlock>
-        <StackPanel Margin="789,44,10,45"/>
+
+        <ItemsControl ItemsSource="{Binding ConnectionsUI}" Margin="790,44,10,45">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource NoBackgroundBtn}" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Width="22" Height="18" BorderThickness="0,0,0,0" Padding="0,0,0,0" Foreground="{x:Null}" 
+                                BorderBrush="{x:Null}" Command="{Binding DataContext.RequestPrivateRoomCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}}"
+                                CommandParameter="{Binding}">
+                            <Button.Background>
+                                <ImageBrush ImageSource="/Views/Message.png"/>
+                            </Button.Background>
+                        </Button>
+                        <Label Content="{Binding Nickname}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
     </Grid>
 </Window>

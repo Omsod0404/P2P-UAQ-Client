@@ -17,17 +17,18 @@ namespace P2P_UAQ_Client.ViewModels
 	public class PrivateChatViewModel : BaseViewModel
 	{
 		private ObservableCollection<string> _messages = new ObservableCollection<string>();
-
-        private CoreHandler _coreHandler = CoreHandler.Instance;
+		private CoreHandler _coreHandler = CoreHandler.Instance;
+		private Window? _window = null;
 
 		private string _username = "";
 		private string _message = "";
 		private string _messageLabel;
-		private string _windowTitle = "";
+		private string _windowTitle = "Chat privado con";
 
-		private Window? _window = null;
+		public bool RequestedClosed { get; set; }
 
-		private ICommand SendMessageCommand;
+		public ICommand SendMessageCommand { get; set; }
+		public ICommand FileCommand { get; set; }
 
 		public Connection? Connection { get; set; }
 
@@ -41,12 +42,21 @@ namespace P2P_UAQ_Client.ViewModels
 			}
 		}
 
+		public string AllMessages
+		{
+			get { return string.Join(Environment.NewLine, Messages); }
+			set
+			{
+
+			}
+		}
+
 		public string WindowTitle
 		{
 			get { return _windowTitle; }
 			set
 			{
-				_windowTitle = $"Chat privado con {Username}";
+				_windowTitle = value;
 				OnPropertyChanged(nameof(WindowTitle));
 			}
 		}
@@ -80,17 +90,22 @@ namespace P2P_UAQ_Client.ViewModels
 			}
 		}
 
-		public PrivateChatViewModel()
+		public PrivateChatViewModel(Connection connection)
         {
 			SendMessageCommand = new ViewModelCommand(SendMessage);
+			FileCommand = new ViewModelCommand(SendFile);
+			Connection = connection;
+			WindowTitle = $"Chat privado con {Connection.Nickname}";
 			_messageLabel = "Escribe un mensaje";
+			RequestedClosed = false;
 		}
 
 		public void AddMessage(string message)
 		{
-			Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+			Application.Current.Dispatcher.Invoke(new Action(() =>
 			{
 				Messages.Add(message);
+				OnPropertyChanged(nameof(AllMessages));
 			}));
 		}
 
@@ -113,49 +128,55 @@ namespace P2P_UAQ_Client.ViewModels
 			{
 				Application.Current.Dispatcher.Invoke(new Action(() =>
 				{
-					Messages.Add(Message);
+					Messages.Add($"{CoreHandler.Instance.LocalConnection!.Nickname}: {Message}");
+					OnPropertyChanged(nameof(AllMessages));
 				}));
 
-				_coreHandler.SendMessageToRemoteClient(Connection!, Message);
+				_coreHandler.SendMessageToRemoteClient(Connection!, $"{CoreHandler.Instance.LocalConnection!.Nickname}: {Message}");
 				Message = "";
 			}
 		}
 
-		public void RequestCloseRoom(object sender)
+		private void SendFile(object sender)
+		{
+			// Para mandar el arhcivo
+			var fileExplorer = new OpenFileDialog()
+			{
+				Title = "Seleccionar Archivo",
+				Filter = "Todos los Archivos (*.*)|*.*",
+            };
+            
+
+            if (fileExplorer.ShowDialog() == true)
+            {
+                string path = fileExplorer.FileName;
+
+                if (!string.IsNullOrEmpty(path))
+                {
+                    long maxSize = 25 * 1024 * 1024;
+
+                    byte[] file = File.ReadAllBytes(path);
+
+                    long fileSize = file.Length;
+
+                    if (fileSize <= maxSize)
+                    {
+                        _coreHandler.SendFileToChat(Connection!, file);
+                    }
+                    else
+                    {
+                        MessageBox.Show("El archivo es mayor a 25MB");
+                    }
+                }
+            }
+        }
+
+		public void RequestCloseRoom()
 		{
 			Application.Current.Dispatcher.Invoke(() =>
 			{
-				//_coreClient.RequestCloseRoom(_messageRoom);
+				_coreHandler.RequestToCloseChat(Connection!);
 			});
-		}
-
-		private void LoadFileAndSelect(object sender)
-		{
-			OpenFileDialog openFileDialog = new OpenFileDialog();
-			openFileDialog.Title = "Open File";
-			openFileDialog.Filter = "Todos los archivos (*.*)|*.*";
-
-			if (openFileDialog.ShowDialog() == true)
-			{
-				string filePath = openFileDialog.FileName;
-
-				if (!string.IsNullOrEmpty(filePath))
-				{
-					long maxFileSize = 50 * 1024 * 1024;
-					byte[] fileData = File.ReadAllBytes(filePath);
-					long fileSize = fileData.Length;
-
-					if (fileSize <= maxFileSize)
-					{
-						//_coreClient.SendFile(fileData, _messageRoom, openFileDialog.SafeFileName);
-					}
-					else
-					{
-						MessageBox.Show("El archivo supera los 50 MB");
-					}
-
-				}
-			}
 		}
 	}
 }

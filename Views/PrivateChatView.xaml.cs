@@ -24,10 +24,22 @@ namespace P2P_UAQ_Client.Views
         private PrivateChatViewModel _viewModel;
         public PrivateChatView(PrivateChatViewModel viewModel)
         {
-            DataContext = viewModel;
             _viewModel = viewModel;
             _viewModel.SetWindowReference(this);
             InitializeComponent();
-        }
-    }
+			DataContext = viewModel;
+		}
+
+		private void Button_Click(object sender, RoutedEventArgs e)
+		{
+            _viewModel.RequestCloseRoom();
+            this.Close();
+		}
+
+		private void Rectangle_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			if (e.ChangedButton == MouseButton.Left)
+				this.DragMove();
+		}
+	}
 }
