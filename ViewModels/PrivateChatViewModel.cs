@@ -140,7 +140,36 @@ namespace P2P_UAQ_Client.ViewModels
 		private void SendFile(object sender)
 		{
 			// Para mandar el arhcivo
-		}
+			var fileExplorer = new OpenFileDialog()
+			{
+				Title = "Seleccionar Archivo",
+				Filter = "Todos los Archivos (*.*)|*.*",
+            };
+            
+
+            if (fileExplorer.ShowDialog() == true)
+            {
+                string path = fileExplorer.FileName;
+
+                if (!string.IsNullOrEmpty(path))
+                {
+                    long maxSize = 25 * 1024 * 1024;
+
+                    byte[] file = File.ReadAllBytes(path);
+
+                    long fileSize = file.Length;
+
+                    if (fileSize <= maxSize)
+                    {
+                        _coreHandler.SendFileToChat(Connection!, file);
+                    }
+                    else
+                    {
+                        MessageBox.Show("El archivo es mayor a 25MB");
+                    }
+                }
+            }
+        }
 
 		public void RequestCloseRoom()
 		{
