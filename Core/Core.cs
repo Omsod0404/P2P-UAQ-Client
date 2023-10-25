@@ -83,7 +83,6 @@ namespace P2P_UAQ_Client.Core
 			}
 		}
 
-
 		public async void InitializeLocalServer()
 		{
 			List<string> ips = new List<string>();
@@ -180,16 +179,36 @@ namespace P2P_UAQ_Client.Core
 					// Cuando recibimos un archivo
 					if (model!.Type == MessageType.File)
 					{
-                        var nickname = model.NicknameRequester;
+						var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>((model.Data! as string)!);
+						var nickname = model.NicknameRequester;
 
-                        var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+						var data = Convert.FromBase64String((dictionary!["Data"] as string)!);
 
-                        if (chatList.Count > 0)
-                        {
-                            var chat = chatList[0];
-                            chat.PrivateChatViewModel!.AddMessage("Nueva imagen perro");
-                        }
-                    }
+						byte[] fileByte = Convert.FromBase64String((dictionary!["Data"] as string)!);
+						string filename = (dictionary!["Filename"] as string)!;
+
+						if (fileByte != null && fileByte.Length > 0)
+						{
+							SaveFileDialog saveFileDialog = new SaveFileDialog();
+							saveFileDialog.Filter = "Archivos (*.*)|*.*";
+							saveFileDialog.FileName = filename;
+
+							if (saveFileDialog.ShowDialog() == true)
+							{
+								string path = saveFileDialog.FileName;
+
+								File.WriteAllBytes(path, fileByte);
+							}
+						}
+
+						var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
+
+						if (chatList.Count > 0)
+						{
+							var chat = chatList[0];
+							chat.PrivateChatViewModel!.AddMessage($"{nickname}: Archivo recibido: {filename}");
+						}
+					}
 
 					// Cuando se cierra el chat del otro lado.
 					if (model!.Type == MessageType.ChatCloseRequest)
@@ -222,40 +241,46 @@ namespace P2P_UAQ_Client.Core
 			_serverConnection.Port = int.Parse(port);
 
 			_localConnection.Nickname = username;
-
-			await _client.ConnectAsync(IPAddress.Parse(_serverConnection.IpAddress), _serverConnection.Port);
-
-			if (_client.Connected)
+			try
 			{
-				_serverConnection.Stream = _client.GetStream();
-				_serverConnection.StreamWriter = new StreamWriter(_serverConnection.Stream);
-				_serverConnection.StreamReader = new StreamReader(_serverConnection.Stream);
+				await _client.ConnectAsync(IPAddress.Parse(_serverConnection.IpAddress), _serverConnection.Port);
 
-				// Avisamos al server cual sera nuestro ip, puerto y nombre de usuario
-				// Mandaremos un connection solo con esos datos.
-
-				var connection = new Connection();
-
-				connection.Port = _localConnection.Port;
-				connection.IpAddress = _localConnection.IpAddress;
-				connection.Nickname = _localConnection.Nickname;
-
-				var message = new Message
+				if (_client.Connected)
 				{
-					Type = MessageType.UserConnected,
-					Data = JsonConvert.SerializeObject(connection),
-					IpAddressRequester = _localConnection.IpAddress,
-					PortRequester = _localConnection.Port,
-					NicknameRequester = _localConnection.Nickname,
-				};
+					_serverConnection.Stream = _client.GetStream();
+					_serverConnection.StreamWriter = new StreamWriter(_serverConnection.Stream);
+					_serverConnection.StreamReader = new StreamReader(_serverConnection.Stream);
 
-				var json = JsonConvert.SerializeObject(message);
+					// Avisamos al server cual sera nuestro ip, puerto y nombre de usuario
+					// Mandaremos un connection solo con esos datos.
 
-				_serverConnection.StreamWriter.WriteLine(json);
-				_serverConnection.StreamWriter.Flush();
+					var connection = new Connection();
 
-				Thread thread = new Thread(ListenToServerAsync);
-				thread.Start();
+					connection.Port = _localConnection.Port;
+					connection.IpAddress = _localConnection.IpAddress;
+					connection.Nickname = _localConnection.Nickname;
+
+					var message = new Message
+					{
+						Type = MessageType.UserConnected,
+						Data = JsonConvert.SerializeObject(connection),
+						IpAddressRequester = _localConnection.IpAddress,
+						PortRequester = _localConnection.Port,
+						NicknameRequester = _localConnection.Nickname,
+					};
+
+					var json = JsonConvert.SerializeObject(message);
+
+					_serverConnection.StreamWriter.WriteLine(json);
+					_serverConnection.StreamWriter.Flush();
+
+					Thread thread = new Thread(ListenToServerAsync);
+					thread.Start();
+				}
+			}
+			catch
+			{
+
 			}
 		}
 		
@@ -439,19 +464,24 @@ namespace P2P_UAQ_Client.Core
 					// Cuando recibimos un archivo
 					if (model!.Type == MessageType.File)
 					{
-						var fileByteString = model.Data as string;
+						var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>((model.Data! as string)!);
                         var nickname = model.NicknameRequester;
 
-						byte[] fileByte = Convert.FromBase64String(fileByteString);
+						var data = Convert.FromBase64String((dictionary!["Data"] as string)!);
 
-                        if (fileByte != null && fileByte.Length > 0)
+						byte[] fileByte = Convert.FromBase64String((dictionary!["Data"] as string)!);
+						string filename = (dictionary!["Filename"] as string)!;
+
+						if (fileByte != null && fileByte.Length > 0)
                         {
                             SaveFileDialog saveFileDialog = new SaveFileDialog();
 							saveFileDialog.Filter = "Archivos (*.*)|*.*";
+							saveFileDialog.FileName = filename;
 
                             if (saveFileDialog.ShowDialog() == true)
                             {
                                 string path = saveFileDialog.FileName;
+
                                 File.WriteAllBytes(path, fileByte);
                             }
                         }
@@ -461,7 +491,7 @@ namespace P2P_UAQ_Client.Core
                         if (chatList.Count > 0)
                         {
                             var chat = chatList[0];
-                            chat.PrivateChatViewModel!.AddMessage($"{nickname}: Archivo enviado");
+                            chat.PrivateChatViewModel!.AddMessage($"{nickname}: Archivo recibido: {filename}");
                         }
                     }
 					
@@ -519,16 +549,21 @@ namespace P2P_UAQ_Client.Core
 			return port;
 		}
 
-        public void SendFileToChat(Connection connection, byte[] img)
+        public void SendFileToChat(Connection connection, byte[] img, string filename)
         {
             // Para mandar el archivo
             var messageVar = new Message();
 
             messageVar.Type = MessageType.File;
-            messageVar.Data = img;
             messageVar.NicknameRequester = _localConnection.Nickname;
 
-            connection.StreamWriter!.WriteLine(JsonConvert.SerializeObject(messageVar));
+			var dictionary = new Dictionary<string, object>();
+			dictionary!.Add("Data", img);
+			dictionary!.Add("Filename", filename);
+
+			messageVar.Data = JsonConvert.SerializeObject(dictionary);
+
+			connection.StreamWriter!.WriteLine(JsonConvert.SerializeObject(messageVar));
             connection.StreamWriter!.Flush();
         }
 

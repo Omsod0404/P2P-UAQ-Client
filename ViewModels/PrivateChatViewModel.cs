@@ -169,7 +169,7 @@ namespace P2P_UAQ_Client.ViewModels
                             OnPropertyChanged(nameof(AllMessages));
                         }));
 
-                        _coreHandler.SendFileToChat(Connection!, file);
+                        _coreHandler.SendFileToChat(Connection!, file, fileExplorer.SafeFileName);
 						file = new byte[0];
 						path = "";
 						fileName = "";

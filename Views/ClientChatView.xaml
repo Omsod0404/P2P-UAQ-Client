@@ -8,7 +8,7 @@
         Title="Chat" Height="424
         " Width="909" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Closing="Window_Closing" Closed="Window_Closed">
     <Grid>
-        <Border HorizontalAlignment="Left" Height="346" Margin="16,17,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4" Grid.RowSpan="2" Grid.ColumnSpan="5">
+        <Border HorizontalAlignment="Left" Height="370" Margin="16,17,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4">
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
@@ -16,31 +16,7 @@
 
         <Label Content="Conectados" HorizontalAlignment="Left" Height="37" Margin="785,17,0,0" VerticalAlignment="Top" Width="98" FontWeight="Bold" FontFamily="Arial Rounded MT Bold"/>
 
-        <Border HorizontalAlignment="Left" Height="30" Margin="16,368,0,0" VerticalAlignment="Top" Width="764" Background="#f4f4f4">
-            <Border.CornerRadius>
-                <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
-            </Border.CornerRadius>
-            <Label Content="{Binding MessageLabel, UpdateSourceTrigger=PropertyChanged}"  Grid.IsSharedSizeScope="True" Foreground="#FF9E9E9E"/>
-        </Border>
-        <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="16,368,133,10" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040"/>
-        <Button Content="Enviar" HorizontalAlignment="Left" Height="30" Command="{Binding ExecuteSendMessage}" Margin="785,368,0,0" VerticalAlignment="Top" Width="114" Foreground="White" Background="#FFA55B5F">
-            <Button.Style>
-                <Style TargetType="Button">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="10">
-                                    <!-- Ajusta el valor de CornerRadius para hacer las esquinas circulares -->
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </Button.Style>
-        </Button>
-
-        <TextBlock TextWrapping="Wrap" Margin="16,23,133,45" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto"></TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="16,23,133,21" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto"></TextBlock>
 
         <ItemsControl ItemsSource="{Binding ConnectionsUI}" Margin="790,44,10,45">
             <ItemsControl.ItemTemplate>
