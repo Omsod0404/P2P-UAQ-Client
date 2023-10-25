@@ -19,7 +19,7 @@
             <Border.CornerRadius>
                 <CornerRadius BottomLeft="10" BottomRight="10" TopLeft="10" TopRight="10"/>
             </Border.CornerRadius>
-            <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="0,0,0,1" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040" HorizontalAlignment="Center" Width="663"/>
+            <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Padding="4" Grid.IsSharedSizeScope="True" Foreground="#FF272727" Margin="0,0,0,1" Background="{x:Null}" BorderBrush="{x:Null}" SelectionBrush="#FF922941" SelectionTextBrush="#FF404040" HorizontalAlignment="Center" Width="617"/>
         </Border>
         <TextBlock TextWrapping="Wrap" Margin="17,34,17,61" Text="{Binding AllMessages, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" />
         <Button Content="Enviar" Height="30" Margin="0,376,14,0" VerticalAlignment="Top" Foreground="White" Background="#FFA55B5F" Command="{Binding SendMessageCommand}" Grid.Column="1" HorizontalAlignment="Right" Width="94"/>

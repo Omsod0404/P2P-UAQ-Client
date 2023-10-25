@@ -14,6 +14,7 @@ using P2P_UAQ_Client.Core.Events;
 using P2P_UAQ_Client.Models;
 using P2P_UAQ_Client.ViewModels;
 using P2P_UAQ_Client.Views;
+using Microsoft.Win32;
 
 namespace P2P_UAQ_Client.Core
 {
@@ -438,17 +439,31 @@ namespace P2P_UAQ_Client.Core
 					// Cuando recibimos un archivo
 					if (model!.Type == MessageType.File)
 					{
+						var fileByteString = model.Data as string;
                         var nickname = model.NicknameRequester;
+
+						byte[] fileByte = Convert.FromBase64String(fileByteString);
+
+                        if (fileByte != null && fileByte.Length > 0)
+                        {
+                            SaveFileDialog saveFileDialog = new SaveFileDialog();
+							saveFileDialog.Filter = "Archivos (*.*)|*.*";
+
+                            if (saveFileDialog.ShowDialog() == true)
+                            {
+                                string path = saveFileDialog.FileName;
+                                File.WriteAllBytes(path, fileByte);
+                            }
+                        }
 
                         var chatList = _chats.FindAll(n => string.Equals(n.RequesterConnection!.Nickname, nickname) || string.Equals(n.ReceiverConnection!.Nickname, nickname));
 
                         if (chatList.Count > 0)
                         {
                             var chat = chatList[0];
-                            chat.PrivateChatViewModel!.AddMessage("Nueva imagen perro");
+                            chat.PrivateChatViewModel!.AddMessage($"{nickname}: Archivo enviado");
                         }
                     }
-
 					
 				}
 				catch 
