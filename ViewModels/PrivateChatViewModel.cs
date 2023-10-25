@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
 
 namespace P2P_UAQ_Client.ViewModels
@@ -150,18 +151,29 @@ namespace P2P_UAQ_Client.ViewModels
             if (fileExplorer.ShowDialog() == true)
             {
                 string path = fileExplorer.FileName;
+				string fileName = Path.GetFileName(path);
 
                 if (!string.IsNullOrEmpty(path))
                 {
                     long maxSize = 25 * 1024 * 1024;
-
                     byte[] file = File.ReadAllBytes(path);
-
                     long fileSize = file.Length;
 
                     if (fileSize <= maxSize)
                     {
+                        _messageLabel = fileName + " listo para enviar";
+
+                        Application.Current.Dispatcher.Invoke(new Action(() =>
+                        {
+                            Messages.Add($"{CoreHandler.Instance.LocalConnection!.Nickname}: Archivo enviado");
+                            OnPropertyChanged(nameof(AllMessages));
+                        }));
+
                         _coreHandler.SendFileToChat(Connection!, file);
+						file = new byte[0];
+						path = "";
+						fileName = "";
+						_messageLabel = "Escribe un mensaje";
                     }
                     else
                     {
